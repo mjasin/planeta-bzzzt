@@ -41,3 +41,10 @@ Demonstrate the power and fun of **Vibe Coding** to young children. Instead of w
 - **Star (`star.gd`):** Collectible item (`Area2D`) with signal callbacks for score increments and trigger effects.
 - **Meteor (`meteor.gd`):** Interactive obstacle (`Area2D` / `RigidBody2D`) with empty process/signal slots ready for live AI logic (e.g. tracking player, spinning).
 - **Main (`main.gd` / UI):** Score tracker (`CanvasLayer` + `Label`) managing global state and game reset functions.
+
+## 6. CLI & Shell Guidelines (RTK)
+
+- Whenever executing shell commands in the project workspace (e.g. `git`, `ls`, `diff`, `grep`, `find`), **always prefix supported commands with `rtk`** (e.g. `rtk git status`, `rtk git diff`, `rtk ls`).
+- `rtk` optimizes and filters terminal output to minimize token usage in the LLM context.
+- Dedicated rules file: `.agents/rules/antigravity-rtk-rules.md`.
+
