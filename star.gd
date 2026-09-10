@@ -20,6 +20,7 @@ var _anim_time: float = 0.0
 var _is_collected: bool = false
 
 func _ready() -> void:
+	add_to_group("stars")
 	_start_position = position
 	body_entered.connect(_on_body_entered)
 	_setup_neon_green_glow()

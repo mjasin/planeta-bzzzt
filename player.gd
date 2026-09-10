@@ -22,6 +22,7 @@ var _anim_time: float = 0.0
 var _trail_particles: CPUParticles2D
 var _aura_particles: CPUParticles2D
 var is_exploding: bool = false
+var is_frozen: bool = false
 
 func _ready() -> void:
 	add_to_group("player")
@@ -34,7 +35,7 @@ func _ready() -> void:
 
 
 func _process(delta: float) -> void:
-	if is_exploding:
+	if is_exploding or is_frozen:
 		return
 	_anim_time += delta * 3.0
 	_apply_breathing_effect()
@@ -42,7 +43,7 @@ func _process(delta: float) -> void:
 
 
 func _physics_process(_delta: float) -> void:
-	if is_exploding:
+	if is_exploding or is_frozen:
 		return
 	var direction := Input.get_vector("ui_left", "ui_right", "ui_up", "ui_down")
 	velocity = direction * speed
@@ -209,3 +210,16 @@ func set_flash_color(color: Color) -> void:
 	if sprite:
 		var tween := create_tween()
 		tween.tween_property(sprite, "modulate", color, 0.2)
+
+
+## Zatrzymuje gracza (np. po wygraniu poziomu)
+func freeze() -> void:
+	is_frozen = true
+	velocity = Vector2.ZERO
+	if _trail_particles:
+		_trail_particles.emitting = false
+
+
+## Odblokowuje ruch gracza
+func unfreeze() -> void:
+	is_frozen = false

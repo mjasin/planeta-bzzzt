@@ -1,18 +1,34 @@
 class_name Main
 extends Node2D
 
-## Main - Skrypt zarządcy gry ze środkową Mecha-Planetą "Planeta Bzzzt!", równomiernym rozmieszczeniem gwiazdek i obsługą wybuchu oraz pościgu.
+## Main - Skrypt zarządcy gry ze środkową Mecha-Planetą "Planeta Bzzzt!", równomiernym rozmieszczeniem gwiazdek, obsługą pościgu i ekranem zwycięstwa.
+
+# --- SYGNAŁY ---
+signal level_completed ## Emitowany po zebraniu wszystkich gwiazdek na planszy
+
+# --- ZMIENNE EKSPORTOWANE ---
+@export_group("Zasady Poziomu")
+@export var target_stars_to_win: int = 0 ## Liczba gwiazdek do wygrania (0 = wszystkie na planszy)
 
 # --- REFERENCJE DO WĘZŁÓW ---
 @onready var score_label: Label = $CanvasLayer/UI/ScoreLabel
 @onready var player: CharacterBody2D = $Player
 @onready var background_rect: ColorRect = $BackgroundLayer/ColorRect
+@onready var ui_root: Control = $CanvasLayer/UI
+@onready var victory_container: Control = get_node_or_null("CanvasLayer/UI/VictoryContainer")
+@onready var victory_label: Label = get_node_or_null("CanvasLayer/UI/VictoryContainer/VictoryLabel")
+@onready var restart_button: Button = get_node_or_null("CanvasLayer/UI/VictoryContainer/RestartButton")
+@onready var restart_hint_label: Label = get_node_or_null("CanvasLayer/UI/VictoryContainer/RestartHintLabel")
 
 # --- ZMIENNE STANU ---
 var score: int = 0:
 	set(value):
 		score = value
 		_update_ui()
+
+var total_stars: int = 0
+var stars_collected: int = 0
+var is_game_won: bool = false
 
 func _ready() -> void:
 	randomize() # Inicjalizacja ziarna losowości
@@ -21,9 +37,11 @@ func _ready() -> void:
 	_setup_ui_neon_style()
 	_randomize_star_positions()
 	_connect_stars()
+	_count_total_stars()
 	_connect_player()
+	_setup_victory_ui()
 	_update_ui()
-	print("🌌 Neonowa gra Planeta Bzzzt! uruchomiona!")
+	print("🌌 Neonowa gra Planeta Bzzzt! uruchomiona! Gwiazdki do zebrania: ", total_stars)
 
 
 ## Rozrzuca wszystkie gwiazdki na scenie równomiernie wokół planety, zapobiegając nakładaniu się
@@ -153,10 +171,27 @@ func add_score(amount: int = 1) -> void:
 		player.call("apply_speed_boost", 1.8, 3.5)
 
 
-## Odświeża napis z liczbą punktów
+## Oblicza całkowitą liczbę gwiazdek na planszy
+func _count_total_stars() -> void:
+	if target_stars_to_win > 0:
+		total_stars = target_stars_to_win
+	else:
+		var star_nodes := get_tree().get_nodes_in_group("stars")
+		total_stars = star_nodes.size()
+		# Rezerwa: jeśli grupa nie była jeszcze zainicjalizowana, zlicz dzieci z sygnałem "collected"
+		if total_stars == 0:
+			for child in get_children():
+				if child.has_signal("collected"):
+					total_stars += 1
+
+
+## Odświeża napis z liczbą punktów i postępem gwiazdek
 func _update_ui() -> void:
 	if score_label:
-		score_label.text = "Gwiazdki: %d" % score
+		if total_stars > 0:
+			score_label.text = "Gwiazdki: %d / %d" % [stars_collected, total_stars]
+		else:
+			score_label.text = "Gwiazdki: %d" % score
 
 
 ## Nadaje etykiecie licznika neonowy żółty kolor z zieloną poświatą
@@ -227,8 +262,221 @@ func _connect_stars() -> void:
 
 
 func _on_star_collected(points: int) -> void:
+	if is_game_won:
+		return
+		
+	stars_collected += 1
 	add_score(points)
+	
+	# Sprawdzamy czy zebrano wszystkie gwiazdki na scenie
+	if total_stars > 0 and stars_collected >= total_stars:
+		level_completed()
 
 
+# ==============================================================================
+# ZAKOŃCZENIE POZIOMU & EKRAN ZWYCIĘSTWA (VICTORY SCREEN & JUICE)
+# ==============================================================================
+
+## Główna funkcja wywoływana po zebraniu wszystkich gwiazdek
+func level_completed() -> void:
+	if is_game_won:
+		return
+	is_game_won = true
+	level_completed.emit()
+	print("🏆 BRAWO! Wszystkie gwiazdki zebrane! POZIOM UKOŃCZONY!")
+	
+	# 1. Zatrzymanie ruchu gracza oraz przeszkód (meteorów)
+	_freeze_gameplay()
+	
+	# 2. Wyświetlenie napisu z soczystym efektem Tween (juice)
+	_show_victory_screen()
+	
+	# 3. Dynamiczny wybuch konfetti i deszcz gwiazd
+	_spawn_victory_confetti()
+
+
+## Zatrzymuje gracza i wszelkie ruchome przeszkody (meteory)
+func _freeze_gameplay() -> void:
+	if player != null and player.has_method("freeze"):
+		player.call("freeze")
+	for child in get_children():
+		if child.has_method("freeze"):
+			child.call("freeze")
+
+
+## Inicjalizuje elementy interfejsu zwycięstwa (dynamicznie lub z drzewa sceny)
+func _setup_victory_ui() -> void:
+	if victory_container == null and ui_root != null:
+		victory_container = Control.new()
+		victory_container.name = "VictoryContainer"
+		victory_container.set_anchors_preset(Control.PRESET_FULL_RECT)
+		ui_root.add_child(victory_container)
+		
+		victory_label = Label.new()
+		victory_label.name = "VictoryLabel"
+		victory_label.text = "POZIOM UKOŃCZONY! BRAWO!"
+		victory_label.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+		victory_label.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
+		victory_label.set_anchors_preset(Control.PRESET_CENTER)
+		victory_label.offset_left = -450.0
+		victory_label.offset_top = -120.0
+		victory_label.offset_right = 450.0
+		victory_label.offset_bottom = -20.0
+		victory_container.add_child(victory_label)
+		
+		restart_button = Button.new()
+		restart_button.name = "RestartButton"
+		restart_button.text = "🚀 Zagraj jeszcze raz 🚀"
+		restart_button.set_anchors_preset(Control.PRESET_CENTER)
+		restart_button.offset_left = -175.0
+		restart_button.offset_top = 10.0
+		restart_button.offset_right = 175.0
+		restart_button.offset_bottom = 75.0
+		victory_container.add_child(restart_button)
+		
+		restart_hint_label = Label.new()
+		restart_hint_label.name = "RestartHintLabel"
+		restart_hint_label.text = "(Naciśnij SPACJĘ lub ENTER aby zagrać ponownie)"
+		restart_hint_label.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+		restart_hint_label.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
+		restart_hint_label.set_anchors_preset(Control.PRESET_CENTER)
+		restart_hint_label.offset_left = -320.0
+		restart_hint_label.offset_top = 85.0
+		restart_hint_label.offset_right = 320.0
+		restart_hint_label.offset_bottom = 120.0
+		victory_container.add_child(restart_hint_label)
+
+	# Stylizacja napisu zwycięstwa
+	if victory_label:
+		victory_label.add_theme_font_size_override("font_size", 54)
+		victory_label.add_theme_color_override("font_color", Color(1.0, 0.95, 0.1, 1.0))
+		victory_label.add_theme_color_override("font_outline_color", Color(0.9, 0.1, 1.2, 1.0))
+		victory_label.add_theme_constant_override("outline_size", 16)
+		victory_label.add_theme_color_override("font_shadow_color", Color(0.0, 0.0, 0.0, 0.8))
+		victory_label.add_theme_constant_override("shadow_offset_x", 5)
+		victory_label.add_theme_constant_override("shadow_offset_y", 5)
+
+	# Stylizacja i podłączenie przycisku restartu
+	if restart_button:
+		restart_button.add_theme_font_size_override("font_size", 26)
+		restart_button.focus_mode = Control.FOCUS_NONE
+		if not restart_button.pressed.is_connected(restart_game):
+			restart_button.pressed.connect(restart_game)
+
+	# Stylizacja podpowiedzi klawiszowej
+	if restart_hint_label:
+		restart_hint_label.add_theme_font_size_override("font_size", 18)
+		restart_hint_label.add_theme_color_override("font_color", Color(0.6, 1.2, 2.0, 0.9))
+
+	if victory_container:
+		victory_container.visible = false
+
+
+## Efekt wyświetlenia ekranu zwycięstwa z animacją Tween (juice)
+func _show_victory_screen() -> void:
+	if victory_container == null:
+		return
+		
+	victory_container.visible = true
+	
+	if victory_label:
+		victory_label.visible = true
+		victory_label.scale = Vector2.ZERO
+		victory_label.pivot_offset = victory_label.size / 2.0
+		
+		# Płynne powiększenie od 0.0 do 1.25, a następnie powrót do 1.0 ze sprężynowaniem (Ease Out Back / Bounce)
+		var tween := create_tween()
+		tween.set_parallel(false)
+		tween.tween_property(victory_label, "scale", Vector2(1.25, 1.25), 0.45).set_trans(Tween.TRANS_BACK).set_ease(Tween.EASE_OUT)
+		tween.tween_property(victory_label, "scale", Vector2.ONE, 0.3).set_trans(Tween.TRANS_BOUNCE).set_ease(Tween.EASE_OUT)
+		
+		# Wesołe kołysanie napisu na boki (soczysty efekt dla dzieci!)
+		var wobble_tween := create_tween().set_loops()
+		wobble_tween.tween_property(victory_label, "rotation", deg_to_rad(3.0), 0.5).set_trans(Tween.TRANS_SINE)
+		wobble_tween.tween_property(victory_label, "rotation", deg_to_rad(-3.0), 0.5).set_trans(Tween.TRANS_SINE)
+		
+	if restart_button:
+		restart_button.visible = true
+		restart_button.scale = Vector2.ZERO
+		restart_button.pivot_offset = restart_button.size / 2.0
+		var btn_tween := create_tween().set_trans(Tween.TRANS_BACK).set_ease(Tween.EASE_OUT)
+		btn_tween.tween_interval(0.35)
+		btn_tween.tween_property(restart_button, "scale", Vector2.ONE, 0.35)
+		
+	if restart_hint_label:
+		restart_hint_label.visible = true
+		restart_hint_label.modulate.a = 0.0
+		var hint_tween := create_tween()
+		hint_tween.tween_interval(0.55)
+		hint_tween.tween_property(restart_hint_label, "modulate:a", 1.0, 0.4)
+
+
+## Wybuch konfetti oraz deszcz gwiazd za pomocą CPUParticles2D
+func _spawn_victory_confetti() -> void:
+	var viewport_size := get_viewport_rect().size
+	if viewport_size.x <= 0 or viewport_size.y <= 0:
+		viewport_size = Vector2(1152, 648)
+	var center := viewport_size / 2.0
+	
+	# 1. Wybuch konfetti w centrum ekranu
+	var confetti := CPUParticles2D.new()
+	confetti.name = "VictoryConfetti"
+	confetti.position = center
+	confetti.amount = 140
+	confetti.lifetime = 3.5
+	confetti.one_shot = true
+	confetti.explosiveness = 0.95
+	confetti.spread = 180.0
+	confetti.gravity = Vector2(0, 240)
+	confetti.initial_velocity_min = 260.0
+	confetti.initial_velocity_max = 580.0
+	confetti.angular_velocity_min = -360.0
+	confetti.angular_velocity_max = 360.0
+	confetti.scale_amount_min = 8.0
+	confetti.scale_amount_max = 16.0
+	
+	# Wielobarwna neonowa tęcza
+	var gradient := Gradient.new()
+	gradient.set_color(0, Color(3.5, 0.4, 1.5, 1.0))   # Magenta HDR
+	gradient.add_point(0.25, Color(0.2, 3.5, 3.5, 1.0)) # Cyan HDR
+	gradient.add_point(0.5, Color(3.5, 3.2, 0.2, 1.0))  # Gold / Yellow HDR
+	gradient.add_point(0.75, Color(0.3, 3.5, 0.6, 1.0)) # Green HDR
+	gradient.set_color(gradient.get_point_count() - 1, Color(3.0, 0.5, 3.0, 0.0))
+	confetti.color_ramp = gradient
+	
+	add_child(confetti)
+	confetti.emitting = true
+	
+	# 2. Deszcz złotych gwiazdek opadających z góry
+	var star_rain := CPUParticles2D.new()
+	star_rain.name = "VictoryStarRain"
+	star_rain.position = Vector2(center.x, -20)
+	star_rain.amount = 75
+	star_rain.lifetime = 4.0
+	star_rain.emission_shape = CPUParticles2D.EMISSION_SHAPE_RECTANGLE
+	star_rain.emission_rect_extents = Vector2(viewport_size.x / 2.0, 10)
+	star_rain.direction = Vector2(0, 1)
+	star_rain.spread = 15.0
+	star_rain.gravity = Vector2(0, 140)
+	star_rain.initial_velocity_min = 90.0
+	star_rain.initial_velocity_max = 220.0
+	star_rain.scale_amount_min = 5.0
+	star_rain.scale_amount_max = 11.0
+	star_rain.color = Color(3.5, 3.2, 0.3, 0.9) # Golden Star Glow
+	add_child(star_rain)
+	star_rain.emitting = true
+
+
+## Obsługa klawiatury – Space lub Enter po wygranej przeładowuje poziom
+func _unhandled_input(event: InputEvent) -> void:
+	if is_game_won:
+		if event.is_action_pressed("ui_accept"):
+			restart_game()
+		elif event is InputEventKey and event.pressed and not event.echo:
+			if event.keycode == KEY_SPACE or event.keycode == KEY_ENTER or event.keycode == KEY_KP_ENTER:
+				restart_game()
+
+
+## Przeładowuje bieżącą scenę
 func restart_game() -> void:
 	get_tree().reload_current_scene()

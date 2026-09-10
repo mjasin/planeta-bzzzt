@@ -14,12 +14,15 @@ extends Area2D
 # --- ZMIENNE PRYWATNE ---
 var target_player: CharacterBody2D = null
 var _anim_time: float = 0.0
+var is_frozen: bool = false
 
 func _ready() -> void:
 	body_entered.connect(_on_body_entered)
 
 
 func _process(delta: float) -> void:
+	if is_frozen:
+		return
 	_anim_time += delta * 3.0
 	
 	# Obrót wokół własnej osi
@@ -85,3 +88,14 @@ func stop_chasing() -> void:
 
 func spin_crazy(extra_speed: float = 8.0) -> void:
 	rotation_speed += extra_speed
+
+
+## Zatrzymuje meteor w miejscu (np. po ukończeniu poziomu)
+func freeze() -> void:
+	is_frozen = true
+	stop_chasing()
+
+
+## Wznawia działanie meteoru
+func unfreeze() -> void:
+	is_frozen = false
