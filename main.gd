@@ -3,12 +3,22 @@ extends Node2D
 
 ## Main - Skrypt zarządcy gry ze środkową Mecha-Planetą "Planeta Bzzzt!", równomiernym rozmieszczeniem gwiazdek, obsługą pościgu i ekranem zwycięstwa.
 
+# --- PROGRESJA POZIOMÓW (ZACHOWYWANA MIĘDZY PRZEŁADOWANIAMI SCENY) ---
+static var current_level: int = 1
+static var extra_stars: int = 0
+static var meteor_speed_multiplier: float = 1.0
+
+# --- PREFABRYKATY ---
+const STAR_SCENE: PackedScene = preload("res://star.tscn")
+
 # --- SYGNAŁY ---
 signal level_won ## Emitowany po zebraniu wszystkich gwiazdek na planszy
 
 # --- ZMIENNE EKSPORTOWANE ---
 @export_group("Zasady Poziomu")
 @export var target_stars_to_win: int = 0 ## Liczba gwiazdek do wygrania (0 = wszystkie na planszy)
+@export var stars_increase_per_level: int = 1 ## Ile dodatkowych gwiazdek dodać na każdy kolejny poziom (+1, +2 itd.)
+@export var meteor_speed_increase_factor: float = 1.1 ## Mnożnik prędkości meteoru po ukończeniu poziomu (+10%)
 
 # --- REFERENCJE DO WĘZŁÓW ---
 @onready var score_label: Label = $CanvasLayer/UI/ScoreLabel
@@ -32,6 +42,8 @@ var is_game_won: bool = false
 
 func _ready() -> void:
 	randomize() # Inicjalizacja ziarna losowości
+	_spawn_extra_stars()
+	_apply_meteor_progression()
 	_setup_world_environment()
 	_setup_starfield_particles()
 	_setup_ui_neon_style()
@@ -41,7 +53,7 @@ func _ready() -> void:
 	_connect_player()
 	_setup_victory_ui()
 	_update_ui()
-	print("🌌 Neonowa gra Planeta Bzzzt! uruchomiona! Gwiazdki do zebrania: ", total_stars)
+	print("🌌 Planeta Bzzzt! Poziom %d | Gwiazdki: %d | Mnożnik meteoru: x%.2f" % [current_level, total_stars, meteor_speed_multiplier])
 
 
 ## Rozrzuca wszystkie gwiazdki na scenie równomiernie wokół planety, zapobiegając nakładaniu się
@@ -171,6 +183,25 @@ func add_score(amount: int = 1) -> void:
 		player.call("apply_speed_boost", 1.8, 3.5)
 
 
+## Tworzy dodatkowe gwiazdki dla kolejnych poziomów trudności
+func _spawn_extra_stars() -> void:
+	if extra_stars <= 0:
+		return
+	for i in extra_stars:
+		var new_star := STAR_SCENE.instantiate()
+		new_star.name = "ExtraStar_Lvl%d_%d" % [current_level, i + 1]
+		add_child(new_star)
+
+
+## Aplikuje zwiększoną prędkość do wszystkich meteorów na planszy
+func _apply_meteor_progression() -> void:
+	if meteor_speed_multiplier <= 1.0:
+		return
+	for child in get_children():
+		if child.has_method("apply_speed_multiplier"):
+			child.call("apply_speed_multiplier", meteor_speed_multiplier)
+
+
 ## Oblicza całkowitą liczbę gwiazdek na planszy
 func _count_total_stars() -> void:
 	if target_stars_to_win > 0:
@@ -185,13 +216,13 @@ func _count_total_stars() -> void:
 					total_stars += 1
 
 
-## Odświeża napis z liczbą punktów i postępem gwiazdek
+## Odświeża napis z liczbą punktów, numerem poziomu i postępem gwiazdek
 func _update_ui() -> void:
 	if score_label:
 		if total_stars > 0:
-			score_label.text = "Gwiazdki: %d / %d" % [stars_collected, total_stars]
+			score_label.text = "Poziom %d | Gwiazdki: %d / %d" % [current_level, stars_collected, total_stars]
 		else:
-			score_label.text = "Gwiazdki: %d" % score
+			score_label.text = "Poziom %d | Punkty: %d" % [current_level, score]
 
 
 ## Nadaje etykiecie licznika neonowy żółty kolor z zieloną poświatą
@@ -380,6 +411,7 @@ func _show_victory_screen() -> void:
 	victory_container.visible = true
 	
 	if victory_label:
+		victory_label.text = "POZIOM %d UKOŃCZONY! BRAWO!" % current_level
 		victory_label.visible = true
 		victory_label.scale = Vector2.ZERO
 		victory_label.pivot_offset = victory_label.size / 2.0
@@ -396,6 +428,7 @@ func _show_victory_screen() -> void:
 		wobble_tween.tween_property(victory_label, "rotation", deg_to_rad(-3.0), 0.5).set_trans(Tween.TRANS_SINE)
 		
 	if restart_button:
+		restart_button.text = "🚀 Poziom %d (+%d ⭐, meteor +10%%) 🚀" % [current_level + 1, stars_increase_per_level]
 		restart_button.visible = true
 		restart_button.scale = Vector2.ZERO
 		restart_button.pivot_offset = restart_button.size / 2.0
@@ -404,6 +437,7 @@ func _show_victory_screen() -> void:
 		btn_tween.tween_property(restart_button, "scale", Vector2.ONE, 0.35)
 		
 	if restart_hint_label:
+		restart_hint_label.text = "(Naciśnij SPACJĘ lub ENTER aby rozpocząć Poziom %d)" % (current_level + 1)
 		restart_hint_label.visible = true
 		restart_hint_label.modulate.a = 0.0
 		var hint_tween := create_tween()
@@ -467,7 +501,7 @@ func _spawn_victory_confetti() -> void:
 	star_rain.emitting = true
 
 
-## Obsługa klawiatury – Space lub Enter po wygranej przeładowuje poziom
+## Obsługa klawiatury – Space/Enter przechodzi do kolejnego poziomu, 'R' resetuje do poziomu 1
 func _unhandled_input(event: InputEvent) -> void:
 	if is_game_won:
 		if event.is_action_pressed("ui_accept"):
@@ -475,8 +509,26 @@ func _unhandled_input(event: InputEvent) -> void:
 		elif event is InputEventKey and event.pressed and not event.echo:
 			if event.keycode == KEY_SPACE or event.keycode == KEY_ENTER or event.keycode == KEY_KP_ENTER:
 				restart_game()
+	else:
+		# Klawisz R pozwala zresetować grę do poziomu 1 w dowolnym momencie
+		if event is InputEventKey and event.pressed and not event.echo and event.keycode == KEY_R:
+			reset_progression()
+			get_tree().reload_current_scene()
 
 
-## Przeładowuje bieżącą scenę
+## Przechodzi do kolejnego poziomu ze zwiększoną trudnością (więcej gwiazdek, szybszy meteor o 10%)
 func restart_game() -> void:
+	if is_game_won:
+		current_level += 1
+		extra_stars += stars_increase_per_level
+		meteor_speed_multiplier *= meteor_speed_increase_factor
+		print("🚀 Start Poziomu %d! Dodano gwiazdek: +%d, nowa prędkość meteoru: x%.2f" % [current_level, extra_stars, meteor_speed_multiplier])
 	get_tree().reload_current_scene()
+
+
+## Resetuje całą progresję trudności z powrotem do Poziomu 1 (np. pod klawiszem 'R')
+static func reset_progression() -> void:
+	current_level = 1
+	extra_stars = 0
+	meteor_speed_multiplier = 1.0
+	print("🔄 Zresetowano grę do Poziomu 1!")

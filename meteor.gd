@@ -99,3 +99,10 @@ func freeze() -> void:
 ## Wznawia działanie meteoru
 func unfreeze() -> void:
 	is_frozen = false
+
+
+## Modyfikuje prędkość poruszania się i obrotu meteoru (np. o 10% na każdy kolejny poziom)
+func apply_speed_multiplier(multiplier: float) -> void:
+	follow_speed *= multiplier
+	rotation_speed *= multiplier
+	print("☄️ Nowa prędkość meteoru: %.1f (mnożnik: x%.2f)" % [follow_speed, multiplier])
