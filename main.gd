@@ -4,7 +4,7 @@ extends Node2D
 ## Main - Skrypt zarządcy gry ze środkową Mecha-Planetą "Planeta Bzzzt!", równomiernym rozmieszczeniem gwiazdek, obsługą pościgu i ekranem zwycięstwa.
 
 # --- SYGNAŁY ---
-signal level_completed ## Emitowany po zebraniu wszystkich gwiazdek na planszy
+signal level_won ## Emitowany po zebraniu wszystkich gwiazdek na planszy
 
 # --- ZMIENNE EKSPORTOWANE ---
 @export_group("Zasady Poziomu")
@@ -282,7 +282,7 @@ func level_completed() -> void:
 	if is_game_won:
 		return
 	is_game_won = true
-	level_completed.emit()
+	level_won.emit()
 	print("🏆 BRAWO! Wszystkie gwiazdki zebrane! POZIOM UKOŃCZONY!")
 	
 	# 1. Zatrzymanie ruchu gracza oraz przeszkód (meteorów)
