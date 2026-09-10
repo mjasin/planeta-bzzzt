@@ -1,0 +1,11 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 128 128" width="128" height="128">
+  <defs>
+    <filter id="glow-green" x="-30%" y="-30%" width="160%" height="160%">
+      <feGaussianBlur stdDeviation="6" result="blur" />
+      <feComposite in="SourceGraphic" in2="blur" operator="over" />
+    </filter>
+  </defs>
+  <polygon points="64,10 79,46 118,46 86,70 99,108 64,84 29,108 42,70 10,46 49,46" 
+           fill="#00ff66" stroke="#ffffff" stroke-width="4" filter="url(#glow-green)"/>
+  <circle cx="64" cy="58" r="12" fill="#ffffff" opacity="0.8"/>
+</svg>

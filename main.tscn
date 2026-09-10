@@ -1,0 +1,64 @@
+[gd_scene load_steps=6 format=3]
+
+[ext_resource type="Script" path="res://main.gd" id="1_main"]
+[ext_resource type="PackedScene" path="res://planet_central.tscn" id="2_planet"]
+[ext_resource type="PackedScene" path="res://player.tscn" id="3_player"]
+[ext_resource type="PackedScene" path="res://star.tscn" id="4_star"]
+[ext_resource type="PackedScene" path="res://meteor.tscn" id="5_meteor"]
+
+[node name="Main" type="Node2D"]
+script = ExtResource("1_main")
+
+[node name="BackgroundLayer" type="CanvasLayer" parent="."]
+layer = -1
+
+[node name="ColorRect" type="ColorRect" parent="BackgroundLayer"]
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+color = Color(0.027451, 0.0392157, 0.117647, 1)
+
+[node name="PlanetCentral" parent="." instance=ExtResource("2_planet")]
+position = Vector2(576, 324)
+
+[node name="Player" parent="." instance=ExtResource("3_player")]
+position = Vector2(160, 324)
+
+[node name="Star1" parent="." instance=ExtResource("4_star")]
+
+[node name="Star2" parent="." instance=ExtResource("4_star")]
+
+[node name="Star3" parent="." instance=ExtResource("4_star")]
+
+[node name="Star4" parent="." instance=ExtResource("4_star")]
+
+[node name="Star5" parent="." instance=ExtResource("4_star")]
+
+[node name="Star6" parent="." instance=ExtResource("4_star")]
+
+[node name="Meteor1" parent="." instance=ExtResource("5_meteor")]
+position = Vector2(380, 200)
+
+[node name="CanvasLayer" type="CanvasLayer" parent="."]
+
+[node name="UI" type="Control" parent="CanvasLayer"]
+layout_mode = 3
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+
+[node name="ScoreLabel" type="Label" parent="CanvasLayer/UI"]
+layout_mode = 0
+offset_left = 40.0
+offset_top = 30.0
+offset_right = 400.0
+offset_bottom = 90.0
+theme_override_colors/font_color = Color(1, 0.95, 0.2, 1)
+theme_override_colors/font_outline_color = Color(0.2, 3, 0.5, 1)
+theme_override_constants/outline_size = 12
+theme_override_font_sizes/font_size = 42
+text = "Gwiazdki: 0"
