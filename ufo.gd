@@ -10,6 +10,11 @@ extends Area2D
 @export var wobble_amount: float = 6.0 ## Amplituda lewitacji
 @export var is_chasing_player: bool = true ## Czy UFO aktywnie śledzi gracza
 
+@export_group("Strzelanie Lasera")
+@export var can_shoot: bool = true ## Czy UFO strzela do bohatera
+@export var shoot_interval: float = 2.5 ## Czas w sekundach pomiędzy kolejnymi strzałami
+@export var laser_scene: PackedScene = preload("res://laser_enemy.tscn")
+
 # --- REFERENCJE DO WĘZŁÓW ---
 @onready var sprite: Sprite2D = $Sprite2D
 @onready var collision_shape: CollisionShape2D = $CollisionShape2D
@@ -20,6 +25,8 @@ var _anim_time: float = 0.0
 var _base_scale: Vector2 = Vector2.ONE
 var _spawn_position: Vector2
 var is_frozen: bool = false
+var is_charging_shot: bool = false
+var _shoot_timer: float = 0.0
 var _thruster_particles: CPUParticles2D
 
 func _ready() -> void:
@@ -38,13 +45,21 @@ func _process(delta: float) -> void:
 		return
 		
 	_anim_time += delta * wobble_speed
-	_apply_alien_glow()
+	if not is_charging_shot:
+		_apply_alien_glow()
 	
 	if is_chasing_player:
 		if target_player == null:
 			_find_player()
 		if target_player != null:
 			_chase_player(delta)
+			
+			# Obsługa strzelania w stronę bohatera
+			if can_shoot:
+				_shoot_timer += delta
+				if _shoot_timer >= shoot_interval:
+					_shoot_timer = 0.0
+					_prepare_and_shoot()
 	else:
 		position.y += sin(_anim_time) * 0.4
 
@@ -137,10 +152,11 @@ func _on_player_hit(player_node: Node2D) -> void:
 	reset_to_spawn()
 
 
-## Cofa UFO na pozycję startową i daje graczowi 1.5s czasu na ucieczkę po odrodzeniu
+## Cofa UFO na pozycję startową i daje graczowi 1.6s czasu na ucieczkę po odrodzeniu
 func reset_to_spawn() -> void:
 	is_chasing_player = false
 	rotation = 0.0
+	_shoot_timer = 0.0 # Resetujemy licznik strzałów, aby nie strzelić od razu w odradzającego się gracza
 	
 	# Płynny powrót spodka na pozycję startową
 	var return_tween := create_tween().set_trans(Tween.TRANS_QUAD).set_ease(Tween.EASE_OUT)
@@ -149,6 +165,43 @@ func reset_to_spawn() -> void:
 	await get_tree().create_timer(1.6).timeout
 	if not is_frozen:
 		start_chasing()
+
+
+## Przygotowanie do strzału: ostrzegawczy błysk i wystrzelenie pocisku w stronę bohatera
+func _prepare_and_shoot() -> void:
+	if is_frozen or target_player == null or laser_scene == null:
+		return
+		
+	is_charging_shot = true
+	
+	# Ostrzegawczy błysk przed strzałem (dzieci widzą, że UFO ładuje laser!)
+	if sprite:
+		var flash_tween := create_tween()
+		flash_tween.tween_property(sprite, "modulate", Color(4.0, 3.5, 0.2, 1.0), 0.25)
+		await flash_tween.finished
+	
+	if is_frozen or target_player == null:
+		is_charging_shot = false
+		return
+		
+	_setup_alien_glow()
+	is_charging_shot = false
+	
+	# Wystrzelenie pocisku plazmowego
+	var spawn_pos: Vector2 = global_position + Vector2(0, 16)
+	var shoot_dir: Vector2 = (target_player.global_position - spawn_pos).normalized()
+	
+	var laser_instance := laser_scene.instantiate()
+	get_parent().add_child(laser_instance)
+	if laser_instance.has_method("initialize"):
+		laser_instance.call("initialize", spawn_pos, shoot_dir)
+		
+	# Efekt odrzutu UFO (recoil)
+	var recoil_tween := create_tween().set_trans(Tween.TRANS_BACK).set_ease(Tween.EASE_OUT)
+	recoil_tween.tween_property(self, "position", position - shoot_dir * 14.0, 0.08)
+	recoil_tween.tween_property(self, "position", position, 0.16)
+	
+	print("⚡ ZŁE UFO wystrzeliło laser plazmowy w kierunku gracza!")
 
 
 # ==============================================================================
@@ -170,6 +223,7 @@ func stop_chasing() -> void:
 func freeze() -> void:
 	is_frozen = true
 	stop_chasing()
+	_shoot_timer = 0.0
 	if _thruster_particles:
 		_thruster_particles.emitting = false
 
@@ -177,6 +231,7 @@ func freeze() -> void:
 func unfreeze() -> void:
 	is_frozen = false
 	start_chasing()
+	_shoot_timer = 0.0
 	if _thruster_particles:
 		_thruster_particles.emitting = true
 

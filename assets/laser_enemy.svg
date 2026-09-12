@@ -1,0 +1,18 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 48 24" width="48" height="24">
+  <defs>
+    <filter id="plasma-glow" x="-50%" y="-50%" width="200%" height="200%">
+      <feGaussianBlur stdDeviation="3" result="blur" />
+      <feComposite in="SourceGraphic" in2="blur" operator="over" />
+    </filter>
+    <linearGradient id="plasma-grad" x1="0%" y1="0%" x2="100%" y2="0%">
+      <stop offset="0%" stop-color="#ff0055" stop-opacity="0.2" />
+      <stop offset="60%" stop-color="#ff0077" />
+      <stop offset="100%" stop-color="#ffff55" />
+    </linearGradient>
+  </defs>
+  <!-- Outer energy shell -->
+  <ellipse cx="24" cy="12" rx="20" ry="8" fill="url(#plasma-grad)" filter="url(#plasma-glow)" />
+  <!-- Core hot beam -->
+  <ellipse cx="28" cy="12" rx="14" ry="4" fill="#ffffff" filter="url(#plasma-glow)" />
+  <circle cx="36" cy="12" r="4" fill="#ffffff" />
+</svg>

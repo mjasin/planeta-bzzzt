@@ -116,7 +116,15 @@ func _connect_player() -> void:
 
 ## Reakcja na wybuch gracza – wyzerowanie wyniku i efekt utraty gwiazdek
 func _on_player_exploded() -> void:
+	_clear_enemy_projectiles()
 	reset_score()
+
+
+## Usuwa wszystkie wrogie pociski z planszy
+func _clear_enemy_projectiles() -> void:
+	for proj in get_tree().get_nodes_in_group("enemy_projectiles"):
+		if is_instance_valid(proj):
+			proj.queue_free()
 
 
 ## Zeruje punkty i odtwarza ostrzegawczą animację w UI
@@ -335,8 +343,9 @@ func level_completed() -> void:
 	_spawn_victory_confetti()
 
 
-## Zatrzymuje gracza i wszelkie ruchome przeszkody (meteory)
+## Zatrzymuje gracza i wszelkie ruchome przeszkody (meteory / UFO) oraz usuwa pociski
 func _freeze_gameplay() -> void:
+	_clear_enemy_projectiles()
 	if player != null and player.has_method("freeze"):
 		player.call("freeze")
 	for child in get_children():
