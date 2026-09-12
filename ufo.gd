@@ -5,14 +5,18 @@ extends Area2D
 
 # --- ZMIENNE EKSPORTOWANE ---
 @export var follow_speed: float = 135.0 ## Prędkość podążania za graczem
-@export var tilt_amount: float = 0.35 ## Maksymalne przechylenie spodka przy skręcie
+@export var is_chasing_player: bool = true ## Czy UFO aktywnie śledzi gracza
+
+@export_group("Obrót / Kręcenie się")
+@export var is_spinning_crazy: bool = true ## Czy UFO szybko się kręci wokół własnej osi
+@export var spin_speed: float = 7.5 ## Prędkość obrotu spodka (rad/s)
+@export var tilt_amount: float = 0.35 ## Przechem przy skręcie (gdy is_spinning_crazy = false)
 @export var wobble_speed: float = 6.0 ## Prędkość lewitacji spodka
 @export var wobble_amount: float = 6.0 ## Amplituda lewitacji
-@export var is_chasing_player: bool = true ## Czy UFO aktywnie śledzi gracza
 
 @export_group("Strzelanie Lasera")
 @export var can_shoot: bool = true ## Czy UFO strzela do bohatera
-@export var shoot_interval: float = 2.5 ## Czas w sekundach pomiędzy kolejnymi strzałami
+@export var shoot_interval: float = 0.45 ## Ciągły ostrzał (czas w sekundach pomiędzy strzałami)
 @export var laser_scene: PackedScene = preload("res://laser_enemy.tscn")
 
 # --- REFERENCJE DO WĘZŁÓW ---
@@ -37,7 +41,7 @@ func _ready() -> void:
 	body_entered.connect(_on_body_entered)
 	_setup_thruster_particles()
 	_setup_alien_glow()
-	print("🛸 ZŁE UFO pojawiło się na orbicie Planety Bzzzt!")
+	print("🛸 SZALONE UFO (kręci się i stale strzela) pojawiło się na orbicie!")
 
 
 func _process(delta: float) -> void:
@@ -47,6 +51,10 @@ func _process(delta: float) -> void:
 	_anim_time += delta * wobble_speed
 	if not is_charging_shot:
 		_apply_alien_glow()
+		
+	# Ciągły szalony obrót spodka wokół własnej osi
+	if is_spinning_crazy:
+		rotation += spin_speed * delta
 	
 	if is_chasing_player:
 		if target_player == null:
@@ -54,12 +62,12 @@ func _process(delta: float) -> void:
 		if target_player != null:
 			_chase_player(delta)
 			
-			# Obsługa strzelania w stronę bohatera
+			# Ciągłe strzelanie w stronę bohatera
 			if can_shoot:
 				_shoot_timer += delta
 				if _shoot_timer >= shoot_interval:
 					_shoot_timer = 0.0
-					_prepare_and_shoot()
+					_shoot_continuous_laser()
 	else:
 		position.y += sin(_anim_time) * 0.4
 
@@ -83,9 +91,10 @@ func _chase_player(delta: float) -> void:
 	var direction := (target_player.global_position - global_position).normalized()
 	global_position += direction * follow_speed * delta
 	
-	# Przechylenie spodka w stronę lotu (efekt pilotażu kosmitów)
-	var target_tilt := direction.x * tilt_amount
-	rotation = lerp_angle(rotation, target_tilt, delta * 7.0)
+	# Przechylenie spodka w stronę lotu tylko jeśli nie wiruje szaleńczo
+	if not is_spinning_crazy:
+		var target_tilt := direction.x * tilt_amount
+		rotation = lerp_angle(rotation, target_tilt, delta * 7.0)
 	
 	# Delikatne pulsowanie lewitacji
 	var pulse := sin(_anim_time) * 0.04
@@ -167,41 +176,27 @@ func reset_to_spawn() -> void:
 		start_chasing()
 
 
-## Przygotowanie do strzału: ostrzegawczy błysk i wystrzelenie pocisku w stronę bohatera
-func _prepare_and_shoot() -> void:
+## Ciągłe, szybkie wystrzeliwanie laserów plazmowych w stronę gracza
+func _shoot_continuous_laser() -> void:
 	if is_frozen or target_player == null or laser_scene == null:
 		return
 		
-	is_charging_shot = true
-	
-	# Ostrzegawczy błysk przed strzałem (dzieci widzą, że UFO ładuje laser!)
-	if sprite:
-		var flash_tween := create_tween()
-		flash_tween.tween_property(sprite, "modulate", Color(4.0, 3.5, 0.2, 1.0), 0.25)
-		await flash_tween.finished
-	
-	if is_frozen or target_player == null:
-		is_charging_shot = false
-		return
-		
-	_setup_alien_glow()
-	is_charging_shot = false
-	
-	# Wystrzelenie pocisku plazmowego
-	var spawn_pos: Vector2 = global_position + Vector2(0, 16)
-	var shoot_dir: Vector2 = (target_player.global_position - spawn_pos).normalized()
+	var spawn_pos: Vector2 = global_position
+	var base_dir: Vector2 = (target_player.global_position - spawn_pos).normalized()
+	# Szeroki kąt rozrzutu pocisków (+/- 12 stopni) dla wspaniałego efektu salwy
+	var spread_angle: float = randf_range(-0.22, 0.22)
+	var shoot_dir: Vector2 = base_dir.rotated(spread_angle)
 	
 	var laser_instance := laser_scene.instantiate()
 	get_parent().add_child(laser_instance)
 	if laser_instance.has_method("initialize"):
 		laser_instance.call("initialize", spawn_pos, shoot_dir)
 		
-	# Efekt odrzutu UFO (recoil)
-	var recoil_tween := create_tween().set_trans(Tween.TRANS_BACK).set_ease(Tween.EASE_OUT)
-	recoil_tween.tween_property(self, "position", position - shoot_dir * 14.0, 0.08)
-	recoil_tween.tween_property(self, "position", position, 0.16)
-	
-	print("⚡ ZŁE UFO wystrzeliło laser plazmowy w kierunku gracza!")
+	# Błysk impulsowy kokpitu UFO przy każdym wystrzale
+	if sprite:
+		sprite.modulate = Color(3.5, 3.0, 0.5, 1.0)
+		var tween := create_tween()
+		tween.tween_property(sprite, "modulate", Color(1.3, 0.9, 1.2, 1.0), 0.1)
 
 
 # ==============================================================================

@@ -6,7 +6,7 @@ extends Area2D
 signal hit_target(target: Node2D)
 
 # --- ZMIENNE EKSPORTOWANE ---
-@export var speed: float = 290.0 ## Prędkość lotu lasera w pikselach na sekundę
+@export var speed: float = 225.0 ## Prędkość lotu lasera w pikselach na sekundę (zbalansowana pod ciągły ostrzał)
 @export var lifetime: float = 4.0 ## Czas życia pocisku przed zniknięciem
 
 # --- REFERENCJE DO WĘZŁÓW ---
