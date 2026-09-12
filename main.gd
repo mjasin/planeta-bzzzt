@@ -258,15 +258,19 @@ func _connect_stars() -> void:
 
 ## Obsługuje zdarzenie zebrania gwiazdki
 func _on_star_collected(points: int = 1) -> void:
-	score += points
+	if is_game_won:
+		return
+		
 	stars_collected += 1
-	print("🏆 Aktualny wynik: ", score)
+	score += points # Wywoła setter score i _update_ui()
+	_update_ui() # Zapewnia natychmiastowe odświeżenie UI i sprawdzenie warunku wygranej
+	print("🏆 Aktualny wynik: %d | Gwiazdki: %d/%d" % [score, stars_collected, total_stars])
 	
 	_animate_score_pop()
 	
-	# Po zdobyciu co najmniej 2 gwiazdek meteor rozpoczyna pościg za graczem!
+	# Po zdobyciu co najmniej 2 gwiazdek UFO rozpoczyna pościg za graczem!
 	if score >= 2:
-		_trigger_meteor_chase()
+		_trigger_ufo_chase()
 	
 	if score % 5 == 0 and player != null and player.has_method("apply_speed_boost"):
 		print("🎉 SUPER BONUS za 5 gwiazdek!")
