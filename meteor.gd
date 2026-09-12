@@ -1,7 +1,7 @@
 class_name Meteor
-extends Area2D
+extends UFO
 
-## Meteor - Skrypt przeszkody z mroczną, purpurową poświatą neonową i detekcją wybuchu gracza.
+## Meteor - Klasa zachowana dla kompatybilności wstecznej (dziedziczy po UFO).
 
 # --- ZMIENNE EKSPORTOWANE ---
 @export var rotation_speed: float = 1.2 ## Prędkość obrotu meteoru

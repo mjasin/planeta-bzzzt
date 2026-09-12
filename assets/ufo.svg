@@ -1,0 +1,47 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 128 128" width="128" height="128">
+  <defs>
+    <filter id="ufo-glow" x="-30%" y="-30%" width="160%" height="160%">
+      <feGaussianBlur stdDeviation="4" result="blur" />
+      <feComposite in="SourceGraphic" in2="blur" operator="over" />
+    </filter>
+    <linearGradient id="dome-grad" x1="0%" y1="0%" x2="0%" y2="100%">
+      <stop offset="0%" stop-color="#ff3366" />
+      <stop offset="100%" stop-color="#790038" />
+    </linearGradient>
+    <linearGradient id="hull-grad" x1="0%" y1="0%" x2="0%" y2="100%">
+      <stop offset="0%" stop-color="#2a0845" />
+      <stop offset="100%" stop-color="#120224" />
+    </linearGradient>
+  </defs>
+
+  <!-- Tractor Beam / Engine Glow at bottom -->
+  <polygon points="44,78 84,78 104,120 24,120" fill="#ff0055" opacity="0.35" filter="url(#ufo-glow)"/>
+  <ellipse cx="64" cy="80" rx="22" ry="7" fill="#ff0055" opacity="0.8"/>
+
+  <!-- Saucer Under-hull -->
+  <ellipse cx="64" cy="70" rx="42" ry="16" fill="#1b0033" stroke="#ff0055" stroke-width="2"/>
+
+  <!-- Main Saucer Hull (Ring) -->
+  <ellipse cx="64" cy="62" rx="56" ry="18" fill="url(#hull-grad)" stroke="#bc13fe" stroke-width="4" filter="url(#ufo-glow)"/>
+
+  <!-- Rim Indicator Lights -->
+  <circle cx="20" cy="63" r="4" fill="#00ffff" filter="url(#ufo-glow)"/>
+  <circle cx="34" cy="68" r="4.5" fill="#ffe600" filter="url(#ufo-glow)"/>
+  <circle cx="50" cy="71" r="5" fill="#00ff66" filter="url(#ufo-glow)"/>
+  <circle cx="64" cy="72" r="5" fill="#ff0055" filter="url(#ufo-glow)"/>
+  <circle cx="78" cy="71" r="5" fill="#00ff66" filter="url(#ufo-glow)"/>
+  <circle cx="94" cy="68" r="4.5" fill="#ffe600" filter="url(#ufo-glow)"/>
+  <circle cx="108" cy="63" r="4" fill="#00ffff" filter="url(#ufo-glow)"/>
+
+  <!-- Glass Cockpit Dome -->
+  <path d="M 38 56 C 38 32, 90 32, 90 56 Z" fill="url(#dome-grad)" stroke="#ff0055" stroke-width="3" filter="url(#ufo-glow)"/>
+  
+  <!-- Alien Eye / Menacing Cockpit Core -->
+  <ellipse cx="64" cy="46" rx="14" ry="9" fill="#ff0044"/>
+  <ellipse cx="64" cy="46" rx="5" ry="7" fill="#ffff00"/>
+  <line x1="64" y1="40" x2="64" y2="52" stroke="#000000" stroke-width="2.5"/>
+
+  <!-- Antenna on top -->
+  <line x1="64" y1="34" x2="64" y2="18" stroke="#bc13fe" stroke-width="3"/>
+  <circle cx="64" cy="16" r="5" fill="#ff0055" stroke="#ffe600" stroke-width="1.5" filter="url(#ufo-glow)"/>
+</svg>

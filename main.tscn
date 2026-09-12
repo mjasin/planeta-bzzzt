@@ -4,7 +4,7 @@
 [ext_resource type="PackedScene" path="res://planet_central.tscn" id="2_planet"]
 [ext_resource type="PackedScene" path="res://player.tscn" id="3_player"]
 [ext_resource type="PackedScene" path="res://star.tscn" id="4_star"]
-[ext_resource type="PackedScene" path="res://meteor.tscn" id="5_meteor"]
+[ext_resource type="PackedScene" path="res://ufo.tscn" id="5_ufo"]
 
 [node name="Main" type="Node2D"]
 script = ExtResource("1_main")
@@ -38,7 +38,7 @@ position = Vector2(160, 324)
 
 [node name="Star6" parent="." instance=ExtResource("4_star")]
 
-[node name="Meteor1" parent="." instance=ExtResource("5_meteor")]
+[node name="UFO" parent="." instance=ExtResource("5_ufo")]
 position = Vector2(380, 200)
 
 [node name="CanvasLayer" type="CanvasLayer" parent="."]

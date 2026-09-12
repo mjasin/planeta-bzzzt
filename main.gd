@@ -53,7 +53,8 @@ func _ready() -> void:
 	_connect_player()
 	_setup_victory_ui()
 	_update_ui()
-	print("🌌 Planeta Bzzzt! Poziom %d | Gwiazdki: %d | Mnożnik meteoru: x%.2f" % [current_level, total_stars, meteor_speed_multiplier])
+	_trigger_ufo_chase()
+	print("🌌 Planeta Bzzzt! Poziom %d | Gwiazdki: %d | Mnożnik UFO: x%.2f" % [current_level, total_stars, meteor_speed_multiplier])
 
 
 ## Rozrzuca wszystkie gwiazdki na scenie równomiernie wokół planety, zapobiegając nakładaniu się
@@ -122,22 +123,30 @@ func _on_player_exploded() -> void:
 func reset_score() -> void:
 	score = 0
 	print("💔 BZZZT! Stracono wszystkie zdobyte gwiazdki!")
-	_stop_meteor_chase()
+	_stop_ufo_chase()
 	_animate_score_reset()
 
 
-## Włącza pościg dla meteorów
-func _trigger_meteor_chase() -> void:
+## Włącza pościg dla złego UFO (i ewentualnych innych wrogów)
+func _trigger_ufo_chase() -> void:
 	for child in get_children():
 		if child.has_method("start_chasing"):
 			child.call("start_chasing", player)
 
 
-## Zatrzymuje pościg meteorów
-func _stop_meteor_chase() -> void:
+func _trigger_meteor_chase() -> void:
+	_trigger_ufo_chase()
+
+
+## Zatrzymuje pościg UFO
+func _stop_ufo_chase() -> void:
 	for child in get_children():
 		if child.has_method("stop_chasing"):
 			child.call("stop_chasing")
+
+
+func _stop_meteor_chase() -> void:
+	_stop_ufo_chase()
 
 
 ## Animacja utraty punktów (czerwone błyskanie i potrząśnięcie napisem)
@@ -428,7 +437,7 @@ func _show_victory_screen() -> void:
 		wobble_tween.tween_property(victory_label, "rotation", deg_to_rad(-3.0), 0.5).set_trans(Tween.TRANS_SINE)
 		
 	if restart_button:
-		restart_button.text = "🚀 Poziom %d (+%d ⭐, meteor +10%%) 🚀" % [current_level + 1, stars_increase_per_level]
+		restart_button.text = "🚀 Poziom %d (+%d ⭐, szybsze UFO +10%%) 🚀" % [current_level + 1, stars_increase_per_level]
 		restart_button.visible = true
 		restart_button.scale = Vector2.ZERO
 		restart_button.pivot_offset = restart_button.size / 2.0
@@ -522,7 +531,7 @@ func restart_game() -> void:
 		current_level += 1
 		extra_stars += stars_increase_per_level
 		meteor_speed_multiplier *= meteor_speed_increase_factor
-		print("🚀 Start Poziomu %d! Dodano gwiazdek: +%d, nowa prędkość meteoru: x%.2f" % [current_level, extra_stars, meteor_speed_multiplier])
+		print("🚀 Start Poziomu %d! Dodano gwiazdek: +%d, nowa prędkość UFO: x%.2f" % [current_level, extra_stars, meteor_speed_multiplier])
 	get_tree().reload_current_scene()
 
 

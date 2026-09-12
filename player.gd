@@ -62,7 +62,7 @@ func explode() -> void:
 	if is_exploding:
 		return
 	is_exploding = true
-	print("💥 BZZZT! BOOM! Gracz wybuchnął po zderzeniu z meteorem!")
+	print("💥 BZZZT! BOOM! Złe UFO dopadło gracza!")
 	
 	exploded.emit()
 	
