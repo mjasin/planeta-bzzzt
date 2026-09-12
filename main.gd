@@ -10,6 +10,7 @@ static var meteor_speed_multiplier: float = 1.0
 
 # --- PREFABRYKATY ---
 const STAR_SCENE: PackedScene = preload("res://star.tscn")
+const UFO_SCENE: PackedScene = preload("res://ufo.tscn")
 
 # --- SYGNAŁY ---
 signal level_won ## Emitowany po zebraniu wszystkich gwiazdek na planszy
@@ -43,6 +44,7 @@ var is_game_won: bool = false
 func _ready() -> void:
 	randomize() # Inicjalizacja ziarna losowości
 	_spawn_extra_stars()
+	_spawn_extra_ufos()
 	_apply_meteor_progression()
 	_setup_world_environment()
 	_setup_starfield_particles()
@@ -54,7 +56,70 @@ func _ready() -> void:
 	_setup_victory_ui()
 	_update_ui()
 	_trigger_ufo_chase()
-	print("🌌 Planeta Bzzzt! Poziom %d | Gwiazdki: %d | Mnożnik UFO: x%.2f" % [current_level, total_stars, meteor_speed_multiplier])
+	
+	var total_ufos := get_tree().get_nodes_in_group("ufos").size()
+	print("🌌 Planeta Bzzzt! Poziom %d | Gwiazdki: %d | Liczba UFO: %d | Mnożnik prędkości: x%.2f" % [current_level, total_stars, total_ufos, meteor_speed_multiplier])
+
+
+## Tworzy dodatkowe UFO na każdy kolejny ukończony poziom w losowych, odrębnych miejscach planszy
+func _spawn_extra_ufos() -> void:
+	var extra_ufo_count: int = current_level - 1
+	if extra_ufo_count <= 0:
+		return
+		
+	var viewport_size := get_viewport_rect().size
+	if viewport_size.x <= 0 or viewport_size.y <= 0:
+		viewport_size = Vector2(1152, 648)
+	var center := viewport_size / 2.0
+	
+	for i in extra_ufo_count:
+		var new_ufo := UFO_SCENE.instantiate()
+		new_ufo.name = "ExtraUFO_Lvl%d_%d" % [current_level, i + 1]
+		
+		# Znalezienie bezpiecznej, losowej pozycji oddalonej od innych UFO, gracza i planety
+		var spawn_pos := _find_random_ufo_position(viewport_size, center)
+		new_ufo.global_position = spawn_pos
+		
+		add_child(new_ufo)
+		print("🛸 Przybyło NOWE UFO #%d na pozycji: %s!" % [i + 2, str(spawn_pos)])
+
+
+## Wyszukuje bezpieczne, losowe miejsce dla nowego UFO
+func _find_random_ufo_position(viewport_size: Vector2, center: Vector2) -> Vector2:
+	var margin_x: float = 90.0
+	var margin_y: float = 90.0
+	var min_dist_from_center: float = 220.0
+	var min_dist_from_player: float = 240.0
+	var min_dist_from_other_ufos: float = 200.0
+	
+	var best_pos := Vector2(randf_range(margin_x, viewport_size.x - margin_x), randf_range(margin_y, viewport_size.y - margin_y))
+	var attempts := 0
+	
+	while attempts < 100:
+		attempts += 1
+		var candidate := Vector2(randf_range(margin_x, viewport_size.x - margin_x), randf_range(margin_y, viewport_size.y - margin_y))
+		
+		# Odległość od środkowej planety
+		if candidate.distance_to(center) < min_dist_from_center:
+			continue
+			
+		# Odległość od pozycji gracza (zapobiega natychmiastowej kolizji po spawnie)
+		if player != null and candidate.distance_to(player.global_position) < min_dist_from_player:
+			continue
+			
+		# Odległość od innych UFO
+		var too_close := false
+		for ufo_node in get_tree().get_nodes_in_group("ufos"):
+			if is_instance_valid(ufo_node) and ufo_node is Node2D:
+				if candidate.distance_to(ufo_node.global_position) < min_dist_from_other_ufos:
+					too_close = true
+					break
+		if too_close:
+			continue
+			
+		return candidate
+		
+	return best_pos
 
 
 ## Rozrzuca wszystkie gwiazdki na scenie równomiernie wokół planety, zapobiegając nakładaniu się
@@ -135,7 +200,7 @@ func reset_score() -> void:
 	_animate_score_reset()
 
 
-## Włącza pościg dla złego UFO (i ewentualnych innych wrogów)
+## Włącza pościg dla wszystkich UFO na planszy
 func _trigger_ufo_chase() -> void:
 	for child in get_children():
 		if child.has_method("start_chasing"):
@@ -146,7 +211,7 @@ func _trigger_meteor_chase() -> void:
 	_trigger_ufo_chase()
 
 
-## Zatrzymuje pościg UFO
+## Zatrzymuje pościg wszystkich UFO na planszy
 func _stop_ufo_chase() -> void:
 	for child in get_children():
 		if child.has_method("stop_chasing"):
@@ -178,15 +243,23 @@ func _setup_world_environment() -> void:
 	env.glow_enabled = true
 	env.glow_intensity = 1.2
 	env.glow_strength = 1.1
-	env.glow_bloom = 0.3
+	env.glow_bloom = 0.25
 	env.glow_blend_mode = Environment.GLOW_BLEND_MODE_ADDITIVE
 	world_env.environment = env
 	add_child(world_env)
 
 
-## Dodaje punkty i odpala dynamiczne efekty w UI
-func add_score(amount: int = 1) -> void:
-	score += amount
+## Łączy sygnały od wszystkich gwiazdek na scenie
+func _connect_stars() -> void:
+	for child in get_children():
+		if child.has_signal("collected"):
+			child.connect("collected", _on_star_collected)
+
+
+## Obsługuje zdarzenie zebrania gwiazdki
+func _on_star_collected() -> void:
+	score += 1
+	stars_collected += 1
 	print("🏆 Aktualny wynik: ", score)
 	
 	_animate_score_pop()
@@ -210,7 +283,7 @@ func _spawn_extra_stars() -> void:
 		add_child(new_star)
 
 
-## Aplikuje zwiększoną prędkość do wszystkich meteorów na planszy
+## Aplikuje zwiększoną prędkość do wszystkich UFO na planszy
 func _apply_meteor_progression() -> void:
 	if meteor_speed_multiplier <= 1.0:
 		return
@@ -240,6 +313,10 @@ func _update_ui() -> void:
 			score_label.text = "Poziom %d | Gwiazdki: %d / %d" % [current_level, stars_collected, total_stars]
 		else:
 			score_label.text = "Poziom %d | Punkty: %d" % [current_level, score]
+			
+	# Sprawdzamy warunek ukończenia poziomu (Victory)
+	if total_stars > 0 and stars_collected >= total_stars and not is_game_won:
+		_on_level_won()
 
 
 ## Nadaje etykiecie licznika neonowy żółty kolor z zieloną poświatą
@@ -265,75 +342,64 @@ func _setup_starfield_particles() -> void:
 	if background_layer == null:
 		return
 		
-	var blue_stars := CPUParticles2D.new()
-	blue_stars.name = "BlueStars"
-	blue_stars.position = Vector2(576, -20)
-	blue_stars.amount = 50
-	blue_stars.lifetime = 10.0
-	blue_stars.emission_shape = CPUParticles2D.EMISSION_SHAPE_RECTANGLE
-	blue_stars.emission_rect_extents = Vector2(650, 10)
-	blue_stars.direction = Vector2(0, 1)
-	blue_stars.spread = 5.0
-	blue_stars.gravity = Vector2(0, 0)
-	blue_stars.initial_velocity_min = 10.0
-	blue_stars.initial_velocity_max = 35.0
-	blue_stars.scale_amount_min = 2.0
-	blue_stars.scale_amount_max = 5.0
-	blue_stars.color = Color(0.3, 1.8, 3.5, 0.8)
-	background_layer.add_child(blue_stars)
-	blue_stars.emitting = true
-	
-	var pink_dust := CPUParticles2D.new()
-	pink_dust.name = "PinkDust"
-	pink_dust.position = Vector2(576, -20)
-	pink_dust.amount = 35
-	pink_dust.lifetime = 12.0
-	pink_dust.emission_shape = CPUParticles2D.EMISSION_SHAPE_RECTANGLE
-	pink_dust.emission_rect_extents = Vector2(650, 10)
-	pink_dust.direction = Vector2(0, 1)
-	pink_dust.spread = 10.0
-	pink_dust.gravity = Vector2(0, 0)
-	pink_dust.initial_velocity_min = 8.0
-	pink_dust.initial_velocity_max = 25.0
-	pink_dust.scale_amount_min = 3.0
-	pink_dust.scale_amount_max = 7.0
-	pink_dust.color = Color(2.5, 0.4, 2.0, 0.6)
-	background_layer.add_child(pink_dust)
-	pink_dust.emitting = true
-
-
-## Łączy sygnały zbieralnych gwiazdek
-func _connect_stars() -> void:
-	for child in get_children():
-		if child.has_signal("collected"):
-			child.connect("collected", _on_star_collected)
-
-
-func _on_star_collected(points: int) -> void:
-	if is_game_won:
-		return
+	var viewport_size := get_viewport_rect().size
+	if viewport_size.x <= 0 or viewport_size.y <= 0:
+		viewport_size = Vector2(1152, 648)
 		
-	stars_collected += 1
-	add_score(points)
+	# Warstwa 1: Wolny pył kosmiczny (ciemnoniebieski/fiolet)
+	var cosmic_dust := CPUParticles2D.new()
+	cosmic_dust.name = "CosmicDust"
+	cosmic_dust.position = viewport_size / 2.0
+	cosmic_dust.amount = 45
+	cosmic_dust.lifetime = 6.0
+	cosmic_dust.emission_shape = CPUParticles2D.EMISSION_SHAPE_RECTANGLE
+	cosmic_dust.emission_rect_extents = viewport_size / 2.0
+	cosmic_dust.gravity = Vector2(0, 0)
+	cosmic_dust.initial_velocity_min = 5.0
+	cosmic_dust.initial_velocity_max = 15.0
+	cosmic_dust.scale_amount_min = 1.0
+	cosmic_dust.scale_amount_max = 3.0
+	cosmic_dust.color = Color(0.3, 0.4, 0.9, 0.4)
+	background_layer.add_child(cosmic_dust)
+	cosmic_dust.emitting = true
 	
-	# Sprawdzamy czy zebrano wszystkie gwiazdki na scenie
-	if total_stars > 0 and stars_collected >= total_stars:
-		level_completed()
+	# Warstwa 2: Migoczące neonowe iskry
+	var bright_sparks := CPUParticles2D.new()
+	bright_sparks.name = "BrightSparks"
+	bright_sparks.position = viewport_size / 2.0
+	bright_sparks.amount = 35
+	bright_sparks.lifetime = 4.0
+	bright_sparks.emission_shape = CPUParticles2D.EMISSION_SHAPE_RECTANGLE
+	bright_sparks.emission_rect_extents = viewport_size / 2.0
+	bright_sparks.gravity = Vector2(0, 0)
+	bright_sparks.initial_velocity_min = 10.0
+	bright_sparks.initial_velocity_max = 25.0
+	bright_sparks.scale_amount_min = 2.0
+	bright_sparks.scale_amount_max = 4.5
+	
+	var gradient := Gradient.new()
+	gradient.set_color(0, Color(0.2, 1.5, 3.0, 0.8)) # Cyan
+	gradient.add_point(0.5, Color(1.8, 0.3, 2.5, 0.9)) # Magenta
+	gradient.set_color(gradient.get_point_count() - 1, Color(2.5, 2.5, 0.4, 0.8)) # Yellow
+	bright_sparks.color_ramp = gradient
+	
+	background_layer.add_child(bright_sparks)
+	bright_sparks.emitting = true
 
 
 # ==============================================================================
-# ZAKOŃCZENIE POZIOMU & EKRAN ZWYCIĘSTWA (VICTORY SCREEN & JUICE)
+# OBSŁUGA ZWYCIĘSTWA I ZAKOŃCZENIA POZIOMU (VICTORY JUICE)
 # ==============================================================================
 
-## Główna funkcja wywoływana po zebraniu wszystkich gwiazdek
-func level_completed() -> void:
+## Wywoływana po zebraniu ostatniej wymaganej gwiazdki
+func _on_level_won() -> void:
 	if is_game_won:
 		return
 	is_game_won = true
 	level_won.emit()
 	print("🏆 BRAWO! Wszystkie gwiazdki zebrane! POZIOM UKOŃCZONY!")
 	
-	# 1. Zatrzymanie ruchu gracza oraz przeszkód (meteorów)
+	# 1. Zatrzymanie ruchu gracza oraz przeszkód (meteorów / UFO)
 	_freeze_gameplay()
 	
 	# 2. Wyświetlenie napisu z soczystym efektem Tween (juice)
@@ -446,7 +512,8 @@ func _show_victory_screen() -> void:
 		wobble_tween.tween_property(victory_label, "rotation", deg_to_rad(-3.0), 0.5).set_trans(Tween.TRANS_SINE)
 		
 	if restart_button:
-		restart_button.text = "🚀 Poziom %d (+%d ⭐, szybsze UFO +10%%) 🚀" % [current_level + 1, stars_increase_per_level]
+		var next_ufo_count: int = current_level + 1
+		restart_button.text = "🚀 Poziom %d (+1 UFO 🛸, +%d ⭐) 🚀" % [current_level + 1, stars_increase_per_level]
 		restart_button.visible = true
 		restart_button.scale = Vector2.ZERO
 		restart_button.pivot_offset = restart_button.size / 2.0
@@ -479,22 +546,18 @@ func _spawn_victory_confetti() -> void:
 	confetti.one_shot = true
 	confetti.explosiveness = 0.95
 	confetti.spread = 180.0
-	confetti.gravity = Vector2(0, 240)
-	confetti.initial_velocity_min = 260.0
-	confetti.initial_velocity_max = 580.0
-	confetti.angular_velocity_min = -360.0
-	confetti.angular_velocity_max = 360.0
-	confetti.scale_amount_min = 8.0
-	confetti.scale_amount_max = 16.0
+	confetti.gravity = Vector2(0, 180)
+	confetti.initial_velocity_min = 180.0
+	confetti.initial_velocity_max = 420.0
+	confetti.scale_amount_min = 4.0
+	confetti.scale_amount_max = 10.0
 	
-	# Wielobarwna neonowa tęcza
-	var gradient := Gradient.new()
-	gradient.set_color(0, Color(3.5, 0.4, 1.5, 1.0))   # Magenta HDR
-	gradient.add_point(0.25, Color(0.2, 3.5, 3.5, 1.0)) # Cyan HDR
-	gradient.add_point(0.5, Color(3.5, 3.2, 0.2, 1.0))  # Gold / Yellow HDR
-	gradient.add_point(0.75, Color(0.3, 3.5, 0.6, 1.0)) # Green HDR
-	gradient.set_color(gradient.get_point_count() - 1, Color(3.0, 0.5, 3.0, 0.0))
-	confetti.color_ramp = gradient
+	var confetti_gradient := Gradient.new()
+	confetti_gradient.set_color(0, Color(3.5, 0.3, 1.2, 1.0))
+	confetti_gradient.add_point(0.3, Color(0.2, 3.0, 3.5, 1.0))
+	confetti_gradient.add_point(0.6, Color(3.5, 3.2, 0.2, 1.0))
+	confetti_gradient.set_color(confetti_gradient.get_point_count() - 1, Color(0.3, 3.5, 0.8, 0.0))
+	confetti.color_ramp = confetti_gradient
 	
 	add_child(confetti)
 	confetti.emitting = true
@@ -534,13 +597,13 @@ func _unhandled_input(event: InputEvent) -> void:
 			get_tree().reload_current_scene()
 
 
-## Przechodzi do kolejnego poziomu ze zwiększoną trudnością (więcej gwiazdek, szybszy meteor o 10%)
+## Przechodzi do kolejnego poziomu ze zwiększoną trudnością (nowe UFO w losowym miejscu, więcej gwiazdek, szybsze UFO)
 func restart_game() -> void:
 	if is_game_won:
 		current_level += 1
 		extra_stars += stars_increase_per_level
 		meteor_speed_multiplier *= meteor_speed_increase_factor
-		print("🚀 Start Poziomu %d! Dodano gwiazdek: +%d, nowa prędkość UFO: x%.2f" % [current_level, extra_stars, meteor_speed_multiplier])
+		print("🚀 Start Poziomu %d! Liczba UFO: %d, Dodano gwiazdek: +%d, nowa prędkość: x%.2f" % [current_level, current_level, extra_stars, meteor_speed_multiplier])
 	get_tree().reload_current_scene()
 
 
@@ -549,4 +612,4 @@ static func reset_progression() -> void:
 	current_level = 1
 	extra_stars = 0
 	meteor_speed_multiplier = 1.0
-	print("🔄 Zresetowano grę do Poziomu 1!")
+	print("🔄 Zresetowano grę do Poziomu 1 (1 bazowe UFO)!")
