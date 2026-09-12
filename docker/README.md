@@ -9,10 +9,51 @@ Kompletna instrukcja wdrożenia gry i landing page na VPS OVH w Dockerze.
 | Wymaganie | Opis |
 |---|---|
 | **VPS OVH** | Ubuntu 22.04+ lub Debian 12+ |
-| **Docker** | v24+ |
-| **Docker Compose** | v2.20+ (wbudowany jako `docker compose`) |
-| **Domena** | DNS A record wskazujący na IP VPS |
-| **Porty** | 80/TCP i 443/TCP otwarte w firewallu |
+| **Docker & Docker Compose** | v24+ |
+| **Nginx Proxy Manager (NPM)** | Działa w Dockerze i zarządza domenami oraz SSL |
+
+---
+
+## 🌟 Najprostszy wariant: Nginx Proxy Manager (NPM)
+
+Jeśli na swoim VPS posiadasz już **Nginx Proxy Manager**, wdrożenie zajmuje 2 minuty:
+
+### 1. Sprawdź nazwę sieci NPM
+Na VPS wpisz:
+```bash
+docker network ls
+```
+Znajdź sieć, w której działa NPM (najczęściej: `npm_network`, `npm_default` lub nazwa katalogu NPM).
+
+### 2. Uruchom kontener gry
+W pliku `docker/docker-compose.npm.yml` upewnij się, że nazwa sieci w sekcji `networks` zgadza się z siecią NPM, a następnie uruchom:
+```bash
+cd ~/planeta-bzzzt/docker
+docker compose -f docker-compose.npm.yml up -d --build
+```
+
+### 3. Skonfiguruj Proxy Host w panelu NPM
+W przeglądarce w panelu Nginx Proxy Manager:
+1. **Proxy Hosts** → **Add Proxy Host**
+2. **Details**:
+   * **Domain Names:** `twoja-domena.pl`
+   * **Scheme:** `http`
+   * **Forward Hostname / IP:** `planeta-bzzzt-web`
+   * **Forward Port:** `80`
+   * Zaznacz: **Block Common Exploits**, **Websockets Support**
+3. **SSL**:
+   * Wybierz: **Request a new SSL Certificate** (Let's Encrypt)
+   * Zaznacz: **Force SSL**, **HTTP/2 Support**
+4. **Advanced** (Kluczowe dla gier Godot WebAssembly!):
+   Wklej poniższe reguły, aby przeglądarka zezwoliła na `SharedArrayBuffer`:
+   ```nginx
+   proxy_pass_header Cross-Origin-Opener-Policy;
+   proxy_pass_header Cross-Origin-Embedder-Policy;
+   proxy_pass_header Cross-Origin-Resource-Policy;
+   ```
+5. Kliknij **Save**. Gotowe! 🚀
+
+---
 
 ---
 

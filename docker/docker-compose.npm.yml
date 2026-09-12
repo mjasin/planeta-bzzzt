@@ -1,0 +1,38 @@
+# ═══════════════════════════════════════════════════════════════
+# Planeta Bzzzt! — Docker Compose dla Nginx Proxy Manager (NPM)
+# ═══════════════════════════════════════════════════════════════
+#
+# Jak to działa:
+# 1. Ten kontener dołącza do zewnętrznej sieci Dockera, w której
+#    znajduje się Nginx Proxy Manager (domyślnie często 'npm_default'
+#    lub zdefiniowana w Twoim NPM docker-compose).
+# 2. W panelu NPM wpisujesz:
+#    Forward Hostname: planeta-bzzzt-web
+#    Forward Port: 80
+# 3. NPM automatycznie generuje SSL (Let's Encrypt) w UI!
+# ═══════════════════════════════════════════════════════════════
+
+services:
+  web:
+    build:
+      context: ..
+      dockerfile: docker/nginx/Dockerfile.reverse-proxy
+    container_name: planeta-bzzzt-web
+    restart: unless-stopped
+    # Porty nie muszą być wystawiane na świat ani na hosta!
+    # NPM komunikuje się bezpośrednio wewnątrz sieci Dockera.
+    expose:
+      - "80"
+    volumes:
+      # Montowanie gier - aktualizacja bez konieczności rebuildu obrazu
+      - ../web/2d:/usr/share/nginx/html/game/2d:ro
+      - ../web/3d:/usr/share/nginx/html/game/3d:ro
+    networks:
+      - npm_network
+
+networks:
+  # Podepnij pod nazwę sieci Twojego Nginx Proxy Managera
+  # (sprawdź poleceniem: docker network ls)
+  npm_network:
+    external: true
+    name: npm_network
