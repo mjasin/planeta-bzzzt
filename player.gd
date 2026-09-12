@@ -126,8 +126,8 @@ func swing_sword() -> void:
 	sword_swung.emit()
 	
 	# Włączamy detekcję kolizji ostrza
-	sword_area.monitoring = true
-	sword_area.monitorable = true
+	sword_area.set_deferred("monitoring", true)
+	sword_area.set_deferred("monitorable", true)
 	
 	# Błysk miecza na biało-błękitny neon
 	if sword_sprite:
@@ -150,8 +150,8 @@ func swing_sword() -> void:
 	await swing_tween.finished
 	
 	# Wyłączamy zadawanie obrażeń po zakończeniu zamachu
-	sword_area.monitoring = false
-	sword_area.monitorable = false
+	sword_area.set_deferred("monitoring", false)
+	sword_area.set_deferred("monitorable", false)
 	is_swinging_sword = false
 	
 	# Płynny powrót miecza do pozycji neutralnej
@@ -281,8 +281,8 @@ func explode() -> void:
 	if sword_pivot:
 		sword_pivot.visible = false
 	if sword_area:
-		sword_area.monitoring = false
-		sword_area.monitorable = false
+		sword_area.set_deferred("monitoring", false)
+		sword_area.set_deferred("monitorable", false)
 	
 	# Efekt cząsteczkowy eksplozji
 	_spawn_explosion_particles()
