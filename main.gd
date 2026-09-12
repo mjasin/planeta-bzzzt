@@ -257,8 +257,8 @@ func _connect_stars() -> void:
 
 
 ## Obsługuje zdarzenie zebrania gwiazdki
-func _on_star_collected() -> void:
-	score += 1
+func _on_star_collected(points: int = 1) -> void:
+	score += points
 	stars_collected += 1
 	print("🏆 Aktualny wynik: ", score)
 	
