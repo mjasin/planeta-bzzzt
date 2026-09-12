@@ -91,6 +91,13 @@ func _chase_player(delta: float) -> void:
 	var direction := (target_player.global_position - global_position).normalized()
 	global_position += direction * follow_speed * delta
 	
+	# Zabezpieczenie przed opuszczeniem planszy przez UFO
+	var viewport_size := get_viewport_rect().size
+	if viewport_size.x > 0 and viewport_size.y > 0:
+		var margin: float = 36.0 * scale.x
+		global_position.x = clampf(global_position.x, margin, viewport_size.x - margin)
+		global_position.y = clampf(global_position.y, margin, viewport_size.y - margin)
+	
 	# Przechylenie spodka w stronę lotu tylko jeśli nie wiruje szaleńczo
 	if not is_spinning_crazy:
 		var target_tilt := direction.x * tilt_amount

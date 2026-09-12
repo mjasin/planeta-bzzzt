@@ -40,6 +40,14 @@ func _physics_process(delta: float) -> void:
 	
 	if _time_alive >= lifetime:
 		_expire()
+		return
+		
+	# Zabezpieczenie: pocisk eksploduje i znika natychmiast po opuszczeniu planszy
+	var vp_size := get_viewport_rect().size
+	if vp_size.x > 0 and vp_size.y > 0:
+		if global_position.x < -20 or global_position.x > vp_size.x + 20 or global_position.y < -20 or global_position.y > vp_size.y + 20:
+			_expire()
+			return
 
 
 func _setup_trail() -> void:

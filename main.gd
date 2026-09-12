@@ -586,8 +586,14 @@ func _spawn_victory_confetti() -> void:
 	star_rain.emitting = true
 
 
-## Obsługa klawiatury – Space/Enter przechodzi do kolejnego poziomu, 'R' resetuje do poziomu 1
+## Obsługa klawiatury – Space/Enter przechodzi do kolejnego poziomu, 'R' resetuje do poziomu 1, F11 przełącza pełny ekran
 func _unhandled_input(event: InputEvent) -> void:
+	# Przełączanie trybu pełnoekranowego klawiszem F11 lub Alt+Enter
+	if event is InputEventKey and event.pressed and not event.echo:
+		if event.keycode == KEY_F11 or (event.keycode == KEY_ENTER and event.alt_pressed):
+			toggle_fullscreen()
+			return
+			
 	if is_game_won:
 		if event.is_action_pressed("ui_accept"):
 			restart_game()
@@ -599,6 +605,16 @@ func _unhandled_input(event: InputEvent) -> void:
 		if event is InputEventKey and event.pressed and not event.echo and event.keycode == KEY_R:
 			reset_progression()
 			get_tree().reload_current_scene()
+
+
+## Przełącza tryb okna między pełnoekranowym a okienkowym
+func toggle_fullscreen() -> void:
+	if DisplayServer.window_get_mode() == DisplayServer.WINDOW_MODE_FULLSCREEN:
+		DisplayServer.window_set_mode(DisplayServer.WINDOW_MODE_WINDOWED)
+		print("🖥️ Zmieniono tryb na okienkowy")
+	else:
+		DisplayServer.window_set_mode(DisplayServer.WINDOW_MODE_FULLSCREEN)
+		print("📺 Zmieniono tryb na pełny ekran")
 
 
 ## Przechodzi do kolejnego poziomu ze zwiększoną trudnością (nowe UFO w losowym miejscu, więcej gwiazdek, szybsze UFO)

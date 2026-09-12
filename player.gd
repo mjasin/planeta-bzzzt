@@ -94,6 +94,12 @@ func _physics_process(_delta: float) -> void:
 	velocity = direction * speed
 	move_and_slide()
 	
+	# Zabezpieczenie przed opuszczeniem planszy (clamp do granic ekranu)
+	var viewport_rect := get_viewport_rect()
+	var margin: float = 32.0 * scale.x
+	global_position.x = clampf(global_position.x, margin, viewport_rect.size.x - margin)
+	global_position.y = clampf(global_position.y, margin, viewport_rect.size.y - margin)
+	
 	if direction.length_squared() > 0.05:
 		_facing_direction = direction.normalized()
 		if not is_swinging_sword and sword_pivot:
