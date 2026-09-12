@@ -11,8 +11,8 @@ static var current_lives: int = 3
 const MAX_LIVES: int = 3
 
 # --- PREFABRYKATY ---
-const STAR_SCENE: PackedScene = preload("res://star.tscn")
-const UFO_SCENE: PackedScene = preload("res://ufo.tscn")
+const STAR_SCENE: PackedScene = preload("res://assets/2d/star.tscn")
+const UFO_SCENE: PackedScene = preload("res://assets/2d/ufo.tscn")
 
 # --- SYGNAŁY ---
 signal level_won ## Emitowany po zebraniu wszystkich gwiazdek na planszy

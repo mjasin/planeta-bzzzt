@@ -17,7 +17,7 @@ extends Area2D
 @export_group("Strzelanie Lasera")
 @export var can_shoot: bool = true ## Czy UFO strzela do bohatera
 @export var shoot_interval: float = 0.45 ## Ciągły ostrzał (czas w sekundach pomiędzy strzałami)
-@export var laser_scene: PackedScene = preload("res://laser_enemy.tscn")
+@export var laser_scene: PackedScene = preload("res://assets/2d/laser_enemy.tscn")
 
 # --- REFERENCJE DO WĘZŁÓW ---
 @onready var sprite: Sprite2D = $Sprite2D

@@ -13,7 +13,7 @@ $GODOT_BIN --headless --export-release "Web 3D" web/3d/index.html
 echo "🛸 [2/2] Eksportowanie Web 2D..."
 mkdir -p web/2d
 # Tymczasowo przestawiamy main_scene na 2D
-sed -i 's|run/main_scene=.*|run/main_scene="res://main.tscn"|' project.godot
+sed -i 's|run/main_scene=.*|run/main_scene="res://assets/2d/main.tscn"|' project.godot
 $GODOT_BIN --headless --export-release "Web 2D" web/2d/index.html
 
 # Przywracamy domyślną scenę 3D

@@ -1,6 +1,6 @@
 [gd_scene load_steps=8 format=3]
 
-[ext_resource type="Script" path="res://player.gd" id="1_player"]
+[ext_resource type="Script" path="res://assets/2d/player.gd" id="1_player"]
 [ext_resource type="Texture2D" path="res://assets/player.svg" id="2_player_tex"]
 [ext_resource type="Texture2D" path="res://assets/sword.svg" id="3_sword_tex"]
 [ext_resource type="Texture2D" path="res://assets/shield.svg" id="4_shield_tex"]
