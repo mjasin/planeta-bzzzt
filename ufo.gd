@@ -18,6 +18,7 @@ extends Area2D
 var target_player: CharacterBody2D = null
 var _anim_time: float = 0.0
 var _base_scale: Vector2 = Vector2.ONE
+var _spawn_position: Vector2
 var is_frozen: bool = false
 var _thruster_particles: CPUParticles2D
 
@@ -25,6 +26,7 @@ func _ready() -> void:
 	add_to_group("enemies")
 	add_to_group("ufos")
 	_base_scale = scale
+	_spawn_position = global_position
 	body_entered.connect(_on_body_entered)
 	_setup_thruster_particles()
 	_setup_alien_glow()
@@ -131,6 +133,22 @@ func _on_player_hit(player_node: Node2D) -> void:
 	var tween := create_tween().set_trans(Tween.TRANS_BACK).set_ease(Tween.EASE_OUT)
 	tween.tween_property(self, "scale", _base_scale * 1.4, 0.15)
 	tween.tween_property(self, "scale", _base_scale, 0.2)
+	
+	reset_to_spawn()
+
+
+## Cofa UFO na pozycję startową i daje graczowi 1.5s czasu na ucieczkę po odrodzeniu
+func reset_to_spawn() -> void:
+	is_chasing_player = false
+	rotation = 0.0
+	
+	# Płynny powrót spodka na pozycję startową
+	var return_tween := create_tween().set_trans(Tween.TRANS_QUAD).set_ease(Tween.EASE_OUT)
+	return_tween.tween_property(self, "global_position", _spawn_position, 0.6)
+	
+	await get_tree().create_timer(1.6).timeout
+	if not is_frozen:
+		start_chasing()
 
 
 # ==============================================================================
