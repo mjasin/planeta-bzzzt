@@ -31,8 +31,7 @@ services:
       - npm_network
 
 networks:
-  # Podepnij pod nazwę sieci Twojego Nginx Proxy Managera
-  # (sprawdź poleceniem: docker network ls)
   npm_network:
     external: true
-    name: npm_network
+    name: gitea-stack_default
+
