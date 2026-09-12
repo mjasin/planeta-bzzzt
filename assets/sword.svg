@@ -1,0 +1,62 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 128 128" width="128" height="128">
+  <defs>
+    <!-- Neon Blade Glow Filter -->
+    <filter id="bladeGlow" x="-50%" y="-50%" width="200%" height="200%">
+      <feGaussianBlur in="SourceGraphic" stdDeviation="4" result="blur1"/>
+      <feGaussianBlur in="SourceGraphic" stdDeviation="8" result="blur2"/>
+      <feMerge>
+        <feMergeNode in="blur2"/>
+        <feMergeNode in="blur1"/>
+        <feMergeNode in="SourceGraphic"/>
+      </feMerge>
+    </filter>
+
+    <!-- Energy Gradients -->
+    <linearGradient id="bladeGrad" x1="0%" y1="100%" x2="0%" y2="0%">
+      <stop offset="0%" stop-color="#00ffff" stop-opacity="0.9"/>
+      <stop offset="40%" stop-color="#38bdf8" stop-opacity="1.0"/>
+      <stop offset="85%" stop-color="#67e8f9" stop-opacity="1.0"/>
+      <stop offset="100%" stop-color="#ffffff" stop-opacity="1.0"/>
+    </linearGradient>
+
+    <linearGradient id="handleGrad" x1="0%" y1="0%" x2="100%" y2="0%">
+      <stop offset="0%" stop-color="#1e293b"/>
+      <stop offset="50%" stop-color="#475569"/>
+      <stop offset="100%" stop-color="#0f172a"/>
+    </linearGradient>
+  </defs>
+
+  <!-- Group centered pointing upwards so rotation pivot is at hilt base (64, 108) -->
+  <g id="sword_layer">
+    <!-- Outer Plasma Aura / Trail -->
+    <path d="M 64 8 L 74 30 L 71 88 L 64 92 L 57 88 L 54 30 Z" 
+          fill="#38bdf8" 
+          opacity="0.6" 
+          filter="url(#bladeGlow)"/>
+
+    <!-- Main Energy Blade -->
+    <path d="M 64 12 L 72 32 L 69 88 L 64 90 L 59 88 L 56 32 Z" 
+          fill="url(#bladeGrad)" 
+          filter="url(#bladeGlow)"/>
+
+    <!-- Pure White Inner Core -->
+    <path d="M 64 16 L 67 34 L 66 86 L 64 88 L 62 86 L 61 34 Z" 
+          fill="#ffffff" 
+          opacity="0.95"/>
+
+    <!-- Energy Emitter / Crossguard Crossbar -->
+    <rect x="46" y="88" width="36" height="8" rx="4" fill="#0284c7" stroke="#38bdf8" stroke-width="2" filter="url(#bladeGlow)"/>
+    <circle cx="50" cy="92" r="3" fill="#67e8f9"/>
+    <circle cx="78" cy="92" r="3" fill="#67e8f9"/>
+
+    <!-- High-tech Grip / Handle -->
+    <rect x="58" y="96" width="12" height="22" rx="3" fill="url(#handleGrad)" stroke="#334155" stroke-width="1.5"/>
+    <!-- Grip Ribs -->
+    <line x1="58" y1="101" x2="70" y2="101" stroke="#0284c7" stroke-width="1.5"/>
+    <line x1="58" y1="106" x2="70" y2="106" stroke="#0284c7" stroke-width="1.5"/>
+    <line x1="58" y1="111" x2="70" y2="111" stroke="#0284c7" stroke-width="1.5"/>
+
+    <!-- Pommel Core / Power Gem -->
+    <circle cx="64" cy="120" r="5" fill="#38bdf8" stroke="#ffffff" stroke-width="1.5" filter="url(#bladeGlow)"/>
+  </g>
+</svg>

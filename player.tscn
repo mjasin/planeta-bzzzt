@@ -1,10 +1,15 @@
-[gd_scene load_steps=4 format=3]
+[gd_scene load_steps=6 format=3]
 
 [ext_resource type="Script" path="res://player.gd" id="1_player"]
 [ext_resource type="Texture2D" path="res://assets/player.svg" id="2_player_tex"]
+[ext_resource type="Texture2D" path="res://assets/sword.svg" id="3_sword_tex"]
 
 [sub_resource type="RectangleShape2D" id="RectangleShape2D_1"]
 size = Vector2(64, 64)
+
+[sub_resource type="CapsuleShape2D" id="CapsuleShape2D_sword"]
+radius = 18.0
+height = 70.0
 
 [node name="Player" type="CharacterBody2D" groups=["player"]]
 script = ExtResource("1_player")
@@ -15,3 +20,20 @@ texture = ExtResource("2_player_tex")
 
 [node name="CollisionShape2D" type="CollisionShape2D" parent="."]
 shape = SubResource("RectangleShape2D_1")
+
+[node name="SwordPivot" type="Node2D" parent="."]
+
+[node name="SwordArea" type="Area2D" parent="SwordPivot" groups=["player_sword"]]
+position = Vector2(40, 0)
+rotation = 1.5708
+monitoring = false
+monitorable = false
+
+[node name="Sprite2D" type="Sprite2D" parent="SwordPivot/SwordArea"]
+position = Vector2(0, -18)
+scale = Vector2(0.7, 0.7)
+texture = ExtResource("3_sword_tex")
+
+[node name="CollisionShape2D" type="CollisionShape2D" parent="SwordPivot/SwordArea"]
+position = Vector2(0, -22)
+shape = SubResource("CapsuleShape2D_sword")

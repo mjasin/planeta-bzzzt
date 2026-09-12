@@ -1,18 +1,28 @@
 class_name Player
 extends CharacterBody2D
 
-## Player - Skrypt gracza z logiką wybuchu i odrodzenia po trafieniu w meteor.
+## Player - Skrypt gracza z logiką wybuchu, odrodzenia oraz miecza laserowego do obrony przed UFO i laserami.
 
 # --- SYGNAŁY ---
-signal exploded ## Wysyłany, gdy gracz wpadnie w meteor i wybuchnie
+signal exploded ## Wysyłany, gdy gracz wpadnie w meteor/UFO i wybuchnie
+signal sword_swung ## Wysyłany przy zamachu mieczem
 
 # --- ZMIENNE EKSPORTOWANE ---
 @export var speed: float = 300.0 ## Prędkość gracza w pikselach na sekundę
 @export var rotation_tilt_amount: float = 0.001 ## Przechył przy ruchu
 
+@export_group("Miecz Świetlny")
+@export var sword_swing_duration: float = 0.22 ## Czas trwania pojedynczego cięcia mieczem
+@export var sword_cooldown: float = 0.28 ## Minimalny odstęp między zamachami miecza
+@export var sword_knockback_force: float = 240.0 ## Siła odrzucenia UFO po trafieniu mieczem
+
 # --- REFERENCJE DO WĘZŁÓW ---
 @onready var sprite: Sprite2D = $Sprite2D
 @onready var collision_shape: CollisionShape2D = $CollisionShape2D
+@onready var sword_pivot: Node2D = get_node_or_null("SwordPivot")
+@onready var sword_area: Area2D = get_node_or_null("SwordPivot/SwordArea")
+@onready var sword_sprite: Sprite2D = get_node_or_null("SwordPivot/SwordArea/Sprite2D")
+@onready var sword_collision: CollisionShape2D = get_node_or_null("SwordPivot/SwordArea/CollisionShape2D")
 
 # --- ZMIENNE PRYWATNE ---
 var _start_position: Vector2
@@ -24,6 +34,11 @@ var _aura_particles: CPUParticles2D
 var is_exploding: bool = false
 var is_frozen: bool = false
 
+# Stan miecza
+var is_swinging_sword: bool = false
+var _can_swing_sword: bool = true
+var _facing_direction: Vector2 = Vector2.RIGHT
+
 func _ready() -> void:
 	add_to_group("player")
 	_start_position = global_position
@@ -32,6 +47,7 @@ func _ready() -> void:
 	_setup_neon_glow()
 	_setup_trail_particles()
 	_setup_aura_particles()
+	_setup_sword()
 
 
 func _process(delta: float) -> void:
@@ -40,6 +56,11 @@ func _process(delta: float) -> void:
 	_anim_time += delta * 3.0
 	_apply_breathing_effect()
 	_apply_tilt_effect(delta)
+	
+	# Delikatne lewitowanie miecza w stanie spoczynku
+	if not is_swinging_sword and sword_area:
+		var float_offset: float = sin(_anim_time * 2.0) * 3.0
+		sword_area.position.y = float_offset
 
 
 func _physics_process(_delta: float) -> void:
@@ -49,8 +70,198 @@ func _physics_process(_delta: float) -> void:
 	velocity = direction * speed
 	move_and_slide()
 	
+	if direction.length_squared() > 0.05:
+		_facing_direction = direction.normalized()
+		if not is_swinging_sword and sword_pivot:
+			sword_pivot.rotation = _facing_direction.angle()
+	
 	if _trail_particles:
 		_trail_particles.emitting = velocity.length_squared() > 10.0
+
+
+func _unhandled_input(event: InputEvent) -> void:
+	if is_exploding or is_frozen:
+		return
+		
+	# Atak mieczem pod Spacją, klawiszem X lub lewym przyciskiem myszy
+	var attack_triggered: bool = false
+	if event is InputEventKey and event.pressed and not event.echo:
+		if event.keycode == KEY_SPACE or event.keycode == KEY_X or event.keycode == KEY_F:
+			attack_triggered = true
+	elif event is InputEventMouseButton and event.pressed and event.button_index == MOUSE_BUTTON_LEFT:
+		attack_triggered = true
+		
+	if attack_triggered and _can_swing_sword and not is_swinging_sword:
+		# Jeśli gracz kliknął myszą, obróć miecz w stronę kursora przed cięciem
+		if event is InputEventMouseButton:
+			var mouse_pos := get_global_mouse_position()
+			_facing_direction = (mouse_pos - global_position).normalized()
+		swing_sword()
+
+
+# ==============================================================================
+# MECHANIKA MIECZA ŚWIETLNEGO (SWORD DEFENSE)
+# ==============================================================================
+
+func _setup_sword() -> void:
+	if sword_area:
+		sword_area.monitoring = false
+		sword_area.monitorable = false
+		if not sword_area.area_entered.is_connected(_on_sword_hit_area):
+			sword_area.area_entered.connect(_on_sword_hit_area)
+		if not sword_area.body_entered.is_connected(_on_sword_hit_body):
+			sword_area.body_entered.connect(_on_sword_hit_body)
+			
+	if sword_sprite:
+		sword_sprite.modulate = Color(1.2, 2.0, 3.5, 0.85)
+
+
+## Wyprowadza potężne, soczyste cięcie mieczem
+func swing_sword() -> void:
+	if is_swinging_sword or not _can_swing_sword or sword_pivot == null or sword_area == null:
+		return
+		
+	is_swinging_sword = true
+	_can_swing_sword = false
+	sword_swung.emit()
+	
+	# Włączamy detekcję kolizji ostrza
+	sword_area.monitoring = true
+	sword_area.monitorable = true
+	
+	# Błysk miecza na biało-błękitny neon
+	if sword_sprite:
+		sword_sprite.modulate = Color(3.5, 3.5, 4.0, 1.0)
+	
+	# Kąt bazowy skierowany tam, gdzie patrzy gracz
+	var base_angle := _facing_direction.angle()
+	var start_angle := base_angle - deg_to_rad(100.0)
+	var end_angle := base_angle + deg_to_rad(100.0)
+	
+	sword_pivot.rotation = start_angle
+	
+	# Soczysty zamach mieczem (Tween)
+	var swing_tween := create_tween().set_trans(Tween.TRANS_CUBIC).set_ease(Tween.EASE_OUT)
+	swing_tween.tween_property(sword_pivot, "rotation", end_angle, sword_swing_duration)
+	
+	# Efekt fali uderzeniowej / cięcia cząsteczkowego
+	_spawn_sword_slash_particles(_facing_direction)
+	
+	await swing_tween.finished
+	
+	# Wyłączamy zadawanie obrażeń po zakończeniu zamachu
+	sword_area.monitoring = false
+	sword_area.monitorable = false
+	is_swinging_sword = false
+	
+	# Płynny powrót miecza do pozycji neutralnej
+	var return_tween := create_tween().set_trans(Tween.TRANS_QUAD).set_ease(Tween.EASE_IN_OUT)
+	return_tween.tween_property(sword_pivot, "rotation", base_angle, 0.1)
+	if sword_sprite:
+		return_tween.parallel().tween_property(sword_sprite, "modulate", Color(1.2, 2.0, 3.5, 0.85), 0.15)
+	
+	# Cooldown przed kolejnym atakiem
+	await get_tree().create_timer(sword_cooldown - sword_swing_duration).timeout
+	_can_swing_sword = true
+
+
+## Kolizja miecza z obiektami Area2D (np. Laser UFO lub UFO jeśli jest Area2D)
+func _on_sword_hit_area(area: Area2D) -> void:
+	if not is_swinging_sword:
+		return
+		
+	# 1. Przecięcie / zniszczenie pocisku laserowego wroga
+	if area.is_in_group("enemy_projectiles") or area is EnemyLaser:
+		print("⚔️ CIĘCIE MIECZEM! Pocisk laserowy UFO został rozcięty na kawałki!")
+		_spawn_sword_spark_burst(area.global_position, Color(0.2, 3.5, 3.0, 1.0))
+		area.queue_free()
+		return
+		
+	# 2. Uderzenie mieczem w UFO
+	if area.is_in_group("enemies") or area.is_in_group("ufos") or area is UFO:
+		_defend_against_ufo(area)
+
+
+## Kolizja miecza z ciałami fizycznymi
+func _on_sword_hit_body(body: Node2D) -> void:
+	if not is_swinging_sword:
+		return
+		
+	if body.is_in_group("enemies") or body.is_in_group("ufos"):
+		_defend_against_ufo(body)
+
+
+## Odrzuca UFO, oszałamia je (stun) i generuje efektowne iskry
+func _defend_against_ufo(enemy_node: Node2D) -> void:
+	print("⚔️ TRAFIENIE UFO MIECZEM! Kosmici zostali odrzuceni i oszołomieni!")
+	
+	# Efektowne iskry uderzenia miecza
+	var hit_pos: Vector2 = (global_position + enemy_node.global_position) / 2.0
+	_spawn_sword_spark_burst(hit_pos, Color(3.5, 3.0, 0.3, 1.0))
+	
+	# Wektor odepchnięcia UFO od gracza
+	var knockback_dir := (enemy_node.global_position - global_position).normalized()
+	if knockback_dir == Vector2.ZERO:
+		knockback_dir = _facing_direction
+		
+	var target_pos := enemy_node.global_position + knockback_dir * sword_knockback_force
+	
+	# Odrzucenie wroga za pomocą Tweena
+	var knock_tween := enemy_node.create_tween().set_trans(Tween.TRANS_BACK).set_ease(Tween.EASE_OUT)
+	knock_tween.tween_property(enemy_node, "global_position", target_pos, 0.25)
+	
+	# Błysk i ogłuszenie UFO
+	if enemy_node.has_method("freeze") and enemy_node.has_method("unfreeze"):
+		enemy_node.call("freeze")
+		var sprite_node = enemy_node.get_node_or_null("Sprite2D")
+		if sprite_node:
+			sprite_node.modulate = Color(3.5, 0.5, 3.5, 1.0)
+		
+		# UFO dochodzi do siebie po 1.2 sekundy
+		await get_tree().create_timer(1.2).timeout
+		if is_instance_valid(enemy_node):
+			enemy_node.call("unfreeze")
+
+
+## Cząsteczki rozbłysku cięcia miecza (Slash arc)
+func _spawn_sword_slash_particles(dir: Vector2) -> void:
+	var particles := CPUParticles2D.new()
+	particles.global_position = global_position + dir * 35.0
+	particles.amount = 25
+	particles.lifetime = 0.25
+	particles.one_shot = true
+	particles.explosiveness = 0.95
+	particles.direction = dir
+	particles.spread = 60.0
+	particles.gravity = Vector2.ZERO
+	particles.initial_velocity_min = 120.0
+	particles.initial_velocity_max = 240.0
+	particles.scale_amount_min = 3.0
+	particles.scale_amount_max = 7.0
+	particles.color = Color(0.2, 3.0, 3.5, 0.9)
+	
+	get_parent().add_child(particles)
+	particles.emitting = true
+
+
+## Iskry przy trafieniu mieczem (kolorowe odłamki energii)
+func _spawn_sword_spark_burst(spark_pos: Vector2, spark_color: Color) -> void:
+	var particles := CPUParticles2D.new()
+	particles.global_position = spark_pos
+	particles.amount = 35
+	particles.lifetime = 0.4
+	particles.one_shot = true
+	particles.explosiveness = 0.98
+	particles.spread = 180.0
+	particles.gravity = Vector2.ZERO
+	particles.initial_velocity_min = 100.0
+	particles.initial_velocity_max = 260.0
+	particles.scale_amount_min = 4.0
+	particles.scale_amount_max = 9.0
+	particles.color = spark_color
+	
+	get_parent().add_child(particles)
+	particles.emitting = true
 
 
 # ==============================================================================
@@ -65,6 +276,13 @@ func explode() -> void:
 	print("💥 BZZZT! BOOM! Złe UFO dopadło gracza!")
 	
 	exploded.emit()
+	
+	# Ukrywamy miecz podczas wybuchu
+	if sword_pivot:
+		sword_pivot.visible = false
+	if sword_area:
+		sword_area.monitoring = false
+		sword_area.monitorable = false
 	
 	# Efekt cząsteczkowy eksplozji
 	_spawn_explosion_particles()
@@ -91,6 +309,8 @@ func _respawn() -> void:
 	rotation = 0.0
 	scale = _base_scale
 	sprite.visible = true
+	if sword_pivot:
+		sword_pivot.visible = true
 	if _aura_particles:
 		_aura_particles.emitting = true
 	collision_shape.set_deferred("disabled", false)
@@ -114,7 +334,6 @@ func _spawn_explosion_particles() -> void:
 	particles.scale_amount_min = 6.0
 	particles.scale_amount_max = 14.0
 	
-	# Ognisto-neonowe barwy wybuchu (Czerwony / Pomarańczowy / Niebieski HDR)
 	var gradient := Gradient.new()
 	gradient.set_color(0, Color(3.5, 0.3, 0.2, 1.0))
 	gradient.set_color(0.5, Color(3.0, 1.5, 0.2, 0.9))
