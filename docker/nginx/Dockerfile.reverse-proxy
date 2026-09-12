@@ -1,0 +1,14 @@
+FROM nginx:alpine
+
+# Usunięcie domyślnej konfiguracji
+RUN rm -f /etc/nginx/conf.d/default.conf
+
+# Skopiowanie dedykowanej konfiguracji HTTP (proxy za Nginxem na hoście)
+COPY docker/nginx/nginx.vps.conf /etc/nginx/nginx.conf
+
+# Wbudowanie plików Landing Page
+COPY landing/ /usr/share/nginx/html/
+
+EXPOSE 80
+
+CMD ["nginx", "-g", "daemon off;"]
