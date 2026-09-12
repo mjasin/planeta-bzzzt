@@ -1,0 +1,56 @@
+[gd_scene load_steps=8 format=3]
+
+[sub_resource type="CylinderShape3D" id="CylinderShape3D_floor"]
+height = 0.4
+radius = 16.0
+
+[sub_resource type="StandardMaterial3D" id="StandardMaterial3D_floor"]
+albedo_color = Color(0.04, 0.06, 0.12, 1)
+metallic = 0.2
+roughness = 0.8
+
+[sub_resource type="CylinderMesh" id="CylinderMesh_floor"]
+material = SubResource("StandardMaterial3D_floor")
+top_radius = 16.0
+bottom_radius = 16.0
+height = 0.4
+
+[sub_resource type="StandardMaterial3D" id="StandardMaterial3D_rim"]
+albedo_color = Color(0.2, 1.8, 3.2, 1)
+emission_enabled = true
+emission = Color(0.2, 1.8, 3.2, 1)
+emission_energy_multiplier = 1.8
+
+[sub_resource type="TorusMesh" id="TorusMesh_rim"]
+material = SubResource("StandardMaterial3D_rim")
+inner_radius = 15.7
+outer_radius = 16.1
+
+[sub_resource type="StandardMaterial3D" id="StandardMaterial3D_orbit_marker"]
+albedo_color = Color(0.15, 0.8, 1.6, 1)
+emission_enabled = true
+emission = Color(0.15, 0.8, 1.6, 1)
+emission_energy_multiplier = 0.8
+
+[sub_resource type="TorusMesh" id="TorusMesh_orbit_marker"]
+material = SubResource("StandardMaterial3D_orbit_marker")
+inner_radius = 8.0
+outer_radius = 8.12
+
+[node name="SpacePlatform" type="StaticBody3D"]
+
+[node name="CollisionShape3D" type="CollisionShape3D" parent="."]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, -0.2, 0)
+shape = SubResource("CylinderShape3D_floor")
+
+[node name="FloorMesh" type="MeshInstance3D" parent="."]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, -0.2, 0)
+mesh = SubResource("CylinderMesh_floor")
+
+[node name="BoundaryRing" type="MeshInstance3D" parent="."]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.02, 0)
+mesh = SubResource("TorusMesh_rim")
+
+[node name="OrbitRingMarker" type="MeshInstance3D" parent="."]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.02, 0)
+mesh = SubResource("TorusMesh_orbit_marker")

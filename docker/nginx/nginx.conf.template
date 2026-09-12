@@ -1,0 +1,186 @@
+# ═══════════════════════════════════════════════════════
+# Nginx configuration template for Planeta Bzzzt!
+# Uses Docker's built-in envsubst for variable substitution.
+# Variables: ${DOMAIN}
+# ═══════════════════════════════════════════════════════
+
+events {
+    worker_connections 1024;
+}
+
+http {
+    include      /etc/nginx/mime.types;
+    default_type application/octet-stream;
+
+    # Ensure .wasm has correct MIME type (required by browsers)
+    types {
+        application/wasm wasm;
+    }
+
+    sendfile    on;
+    tcp_nopush  on;
+    server_tokens off;
+
+    keepalive_timeout 65;
+
+    # ── Gzip compression ─────────────────────────
+    # Godot .wasm and .pck files can be large — compress them
+    gzip              on;
+    gzip_comp_level   6;
+    gzip_vary         on;
+    gzip_min_length   1024;
+    gzip_proxied      any;
+    gzip_types
+        text/plain
+        text/css
+        text/javascript
+        application/javascript
+        application/json
+        application/xml
+        application/wasm
+        application/octet-stream
+        image/svg+xml;
+
+    # ── Logging ───────────────────────────────────
+    log_format main '$remote_addr - $remote_user [$time_local] "$request" '
+                    '$status $body_bytes_sent "$http_referer" '
+                    '"$http_user_agent"';
+    access_log /var/log/nginx/access.log main;
+    error_log  /var/log/nginx/error.log warn;
+
+    # ════════════════════════════════════════════════
+    # HTTP → HTTPS redirect  (also handles ACME challenge)
+    # ════════════════════════════════════════════════
+    server {
+        listen 80;
+        listen [::]:80;
+        server_name ${DOMAIN};
+
+        # Let's Encrypt ACME challenge endpoint
+        location /.well-known/acme-challenge/ {
+            root /var/www/certbot;
+        }
+
+        # Redirect all other traffic to HTTPS
+        location / {
+            return 301 https://$host$request_uri;
+        }
+    }
+
+    # ════════════════════════════════════════════════
+    # HTTPS main server
+    # ════════════════════════════════════════════════
+    server {
+        listen 443 ssl;
+        listen [::]:443 ssl;
+        http2 on;
+        server_name ${DOMAIN};
+
+        # ── TLS certificates (Let's Encrypt via Certbot) ──
+        ssl_certificate     /etc/letsencrypt/live/${DOMAIN}/fullchain.pem;
+        ssl_certificate_key /etc/letsencrypt/live/${DOMAIN}/privkey.pem;
+
+        # Modern TLS config (Mozilla Intermediate)
+        ssl_protocols             TLSv1.2 TLSv1.3;
+        ssl_ciphers               ECDHE-ECDSA-AES128-GCM-SHA256:ECDHE-RSA-AES128-GCM-SHA256:ECDHE-ECDSA-AES256-GCM-SHA384:ECDHE-RSA-AES256-GCM-SHA384:ECDHE-ECDSA-CHACHA20-POLY1305:ECDHE-RSA-CHACHA20-POLY1305:DHE-RSA-AES128-GCM-SHA256;
+        ssl_prefer_server_ciphers off;
+        ssl_session_cache         shared:SSL:10m;
+        ssl_session_timeout       1d;
+        ssl_session_tickets       off;
+
+        # HSTS (enable after confirming everything works)
+        # add_header Strict-Transport-Security "max-age=63072000; includeSubDomains; preload" always;
+
+        # ── Document root ──────────────────────────
+        root  /usr/share/nginx/html;
+        index index.html;
+
+        # ── CRITICAL: COOP + COEP headers ──────────
+        # Godot 4 WebAssembly requires SharedArrayBuffer,
+        # which browsers only allow with these two headers set.
+        # Must be present on EVERY response (hence 'always').
+        add_header Cross-Origin-Opener-Policy   "same-origin"    always;
+        add_header Cross-Origin-Embedder-Policy "require-corp"   always;
+        add_header Cross-Origin-Resource-Policy "cross-origin"   always;
+
+        # ── Security headers ───────────────────────
+        add_header X-Content-Type-Options  "nosniff"                         always;
+        add_header X-Frame-Options         "SAMEORIGIN"                      always;
+        add_header Referrer-Policy         "strict-origin-when-cross-origin" always;
+
+        # ── Landing page (root) ────────────────────
+        location / {
+            try_files $uri $uri/ /index.html;
+
+            # Short cache for HTML
+            location ~* \.html$ {
+                add_header Cross-Origin-Opener-Policy   "same-origin"    always;
+                add_header Cross-Origin-Embedder-Policy "require-corp"   always;
+                add_header Cross-Origin-Resource-Policy "cross-origin"   always;
+                add_header Cache-Control "no-cache, no-store, must-revalidate" always;
+            }
+
+            # Long cache for static assets (CSS, JS, fonts, images)
+            location ~* \.(css|js|svg|png|jpg|jpeg|webp|woff2|woff|ttf)$ {
+                add_header Cross-Origin-Opener-Policy   "same-origin"    always;
+                add_header Cross-Origin-Embedder-Policy "require-corp"   always;
+                add_header Cross-Origin-Resource-Policy "cross-origin"   always;
+                add_header Cache-Control "public, max-age=604800, immutable" always;
+                expires 7d;
+            }
+        }
+
+        # ── Godot Game — 2D version ────────────────
+        location /game/2d/ {
+            alias /usr/share/nginx/html/game/2d/;
+            try_files $uri $uri/ =404;
+
+            # Godot game HTML entry point — no cache
+            location ~* \.html$ {
+                add_header Cross-Origin-Opener-Policy   "same-origin"  always;
+                add_header Cross-Origin-Embedder-Policy "require-corp" always;
+                add_header Cross-Origin-Resource-Policy "cross-origin" always;
+                add_header Cache-Control "no-cache, no-store, must-revalidate" always;
+            }
+
+            # WebAssembly + game data — long cache (content rarely changes)
+            location ~* \.(wasm|pck|js)$ {
+                add_header Cross-Origin-Opener-Policy   "same-origin"  always;
+                add_header Cross-Origin-Embedder-Policy "require-corp" always;
+                add_header Cross-Origin-Resource-Policy "cross-origin" always;
+                add_header Cache-Control "public, max-age=86400" always;
+            }
+        }
+
+        # ── Godot Game — 3D version ────────────────
+        location /game/3d/ {
+            alias /usr/share/nginx/html/game/3d/;
+            try_files $uri $uri/ =404;
+
+            location ~* \.html$ {
+                add_header Cross-Origin-Opener-Policy   "same-origin"  always;
+                add_header Cross-Origin-Embedder-Policy "require-corp" always;
+                add_header Cross-Origin-Resource-Policy "cross-origin" always;
+                add_header Cache-Control "no-cache, no-store, must-revalidate" always;
+            }
+
+            location ~* \.(wasm|pck|js)$ {
+                add_header Cross-Origin-Opener-Policy   "same-origin"  always;
+                add_header Cross-Origin-Embedder-Policy "require-corp" always;
+                add_header Cross-Origin-Resource-Policy "cross-origin" always;
+                add_header Cache-Control "public, max-age=86400" always;
+            }
+        }
+
+        # ── Let's Encrypt renewal ──────────────────
+        location /.well-known/acme-challenge/ {
+            root /var/www/certbot;
+        }
+
+        # ── Block access to hidden files ───────────
+        location ~ /\. {
+            deny all;
+            return 404;
+        }
+    }
+}

@@ -1,3 +1,17 @@
 # Godot 4+ specific ignores
 .godot/
 /android/
+
+# Docker secrets & generated files
+docker/.env
+docker/certbot/
+
+# Godot HTML5 exports (generated — not committed to repo)
+# Upload these to the VPS separately via rsync/scp
+web/2d/*
+!web/2d/README.md
+!web/2d/index.html
+web/3d/*
+!web/3d/README.md
+!web/3d/index.html
+

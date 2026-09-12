@@ -1,0 +1,27 @@
+# ═══════════════════════════════════════════════════════
+# Planeta Bzzzt! — Docker Compose DEV (localhost)
+#
+# Uruchomienie:
+#   docker compose -f docker-compose.dev.yml up
+#
+# Strona dostępna pod: http://localhost:8080
+#
+# Pliki landing/ są montowane jako volume — zmiany
+# widoczne natychmiast bez restartu kontenera!
+# ═══════════════════════════════════════════════════════
+
+services:
+  web:
+    image: nginx:alpine
+    container_name: planeta-bzzzt-dev
+    restart: unless-stopped
+    ports:
+      - "8181:80"         # http://localhost:8181
+    volumes:
+      # Nginx config (dev — HTTP only, bez SSL)
+      - ./nginx/nginx.dev.conf:/etc/nginx/nginx.conf:ro
+      # Montujemy każdy katalog osobno do unikalnych ścieżek
+      # (Docker nie pozwala na subvolume w obrębie innego volume)
+      - ../landing:/srv/landing:ro
+      - ../web/2d:/srv/game/2d:ro
+      - ../web/3d:/srv/game/3d:ro

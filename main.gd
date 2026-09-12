@@ -7,6 +7,8 @@ extends Node2D
 static var current_level: int = 1
 static var extra_stars: int = 0
 static var meteor_speed_multiplier: float = 1.0
+static var current_lives: int = 3
+const MAX_LIVES: int = 3
 
 # --- PREFABRYKATY ---
 const STAR_SCENE: PackedScene = preload("res://star.tscn")
@@ -14,6 +16,8 @@ const UFO_SCENE: PackedScene = preload("res://ufo.tscn")
 
 # --- SYGNAŁY ---
 signal level_won ## Emitowany po zebraniu wszystkich gwiazdek na planszy
+signal player_lost_life(remaining_lives: int) ## Emitowany po utracie życia
+signal game_over ## Emitowany po utracie wszystkich żyć
 
 # --- ZMIENNE EKSPORTOWANE ---
 @export_group("Zasady Poziomu")
@@ -23,6 +27,7 @@ signal level_won ## Emitowany po zebraniu wszystkich gwiazdek na planszy
 
 # --- REFERENCJE DO WĘZŁÓW ---
 @onready var score_label: Label = $CanvasLayer/UI/ScoreLabel
+@onready var lives_label: Label = get_node_or_null("CanvasLayer/UI/LivesLabel")
 @onready var player: CharacterBody2D = $Player
 @onready var background_rect: ColorRect = $BackgroundLayer/ColorRect
 @onready var ui_root: Control = $CanvasLayer/UI
@@ -58,7 +63,7 @@ func _ready() -> void:
 	_trigger_ufo_chase()
 	
 	var total_ufos := get_tree().get_nodes_in_group("ufos").size()
-	print("🌌 Planeta Bzzzt! Poziom %d | Gwiazdki: %d | Liczba UFO: %d | Mnożnik prędkości: x%.2f" % [current_level, total_stars, total_ufos, meteor_speed_multiplier])
+	print(" Planeta Bzzzt! Poziom %d | Gwiazdki: %d | Liczba UFO: %d | Mnożnik prędkości: x%.2f" % [current_level, total_stars, total_ufos, meteor_speed_multiplier])
 
 
 ## Tworzy dodatkowe UFO na każdy kolejny ukończony poziom w losowych, odrębnych miejscach planszy
@@ -81,7 +86,7 @@ func _spawn_extra_ufos() -> void:
 		new_ufo.global_position = spawn_pos
 		
 		add_child(new_ufo)
-		print("🛸 Przybyło NOWE UFO #%d na pozycji: %s!" % [i + 2, str(spawn_pos)])
+		print(" Przybyło NOWE UFO #%d na pozycji: %s!" % [i + 2, str(spawn_pos)])
 
 
 ## Wyszukuje bezpieczne, losowe miejsce dla nowego UFO
@@ -179,10 +184,64 @@ func _connect_player() -> void:
 		player.connect("exploded", _on_player_exploded)
 
 
-## Reakcja na wybuch gracza – wyzerowanie wyniku i efekt utraty gwiazdek
+## Reakcja na wybuch gracza - utrata życia, sprawdzenie Game Over lub reset gwiazdek
 func _on_player_exploded() -> void:
 	_clear_enemy_projectiles()
-	reset_score()
+	current_lives -= 1
+	player_lost_life.emit(current_lives)
+	print("[ ] GRACZ TRAFIONY! Pozostałe życia: %d / %d" % [current_lives, MAX_LIVES])
+	_update_ui()
+	_animate_life_loss()
+	
+	if current_lives <= 0:
+		_on_game_over()
+	else:
+		reset_score()
+
+
+## Obsługa stanu Game Over po utracie 3 żyć - reset do Poziomu 1
+func _on_game_over() -> void:
+	game_over.emit()
+	print(" GAME OVER! Stracono 3 życia. Resetowanie gry do Poziomu 1...")
+	_freeze_gameplay()
+	_show_game_over_screen()
+
+
+## Efekt wyświetlenia ekranu Game Over
+func _show_game_over_screen() -> void:
+	if victory_container == null:
+		return
+		
+	victory_container.visible = true
+	
+	if victory_label:
+		victory_label.text = " KONIEC GRY! (3 PORAŻKI) "
+		victory_label.add_theme_color_override("font_color", Color(3.5, 0.2, 0.2, 1.0))
+		victory_label.add_theme_color_override("font_outline_color", Color(0.1, 0.0, 0.0, 1.0))
+		victory_label.visible = true
+		victory_label.scale = Vector2.ZERO
+		victory_label.pivot_offset = victory_label.size / 2.0
+		
+		var tween := create_tween()
+		tween.tween_property(victory_label, "scale", Vector2(1.2, 1.2), 0.4).set_trans(Tween.TRANS_BACK).set_ease(Tween.EASE_OUT)
+		tween.tween_property(victory_label, "scale", Vector2.ONE, 0.2).set_trans(Tween.TRANS_BOUNCE).set_ease(Tween.EASE_OUT)
+		
+	if restart_button:
+		restart_button.text = " Spróbuj ponownie od Poziomu 1 "
+		restart_button.visible = true
+		restart_button.scale = Vector2.ZERO
+		restart_button.pivot_offset = restart_button.size / 2.0
+		var btn_tween := create_tween().set_trans(Tween.TRANS_BACK).set_ease(Tween.EASE_OUT)
+		btn_tween.tween_interval(0.3)
+		btn_tween.tween_property(restart_button, "scale", Vector2.ONE, 0.35)
+		
+	if restart_hint_label:
+		restart_hint_label.text = "(Naciśnij SPACJĘ lub ENTER aby zresetować do Poziomu 1)"
+		restart_hint_label.visible = true
+		restart_hint_label.modulate.a = 0.0
+		var hint_tween := create_tween()
+		hint_tween.tween_interval(0.4)
+		hint_tween.tween_property(restart_hint_label, "modulate:a", 1.0, 0.4)
 
 
 ## Usuwa wszystkie wrogie pociski z planszy
@@ -195,7 +254,7 @@ func _clear_enemy_projectiles() -> void:
 ## Zeruje punkty i odtwarza ostrzegawczą animację w UI
 func reset_score() -> void:
 	score = 0
-	print("💔 BZZZT! Stracono wszystkie zdobyte gwiazdki!")
+	print("[ ] BZZZT! Stracono zebrane gwiazdki na tym podejściu!")
 	_stop_ufo_chase()
 	_animate_score_reset()
 
@@ -220,6 +279,18 @@ func _stop_ufo_chase() -> void:
 
 func _stop_meteor_chase() -> void:
 	_stop_ufo_chase()
+
+
+## Animacja utraty życia w UI
+func _animate_life_loss() -> void:
+	if lives_label:
+		lives_label.pivot_offset = lives_label.size / 2.0
+		var tween := create_tween().set_trans(Tween.TRANS_BOUNCE).set_ease(Tween.EASE_OUT)
+		lives_label.add_theme_color_override("font_color", Color(3.5, 0.1, 0.1, 1.0))
+		tween.tween_property(lives_label, "scale", Vector2(1.5, 1.5), 0.15)
+		tween.tween_property(lives_label, "scale", Vector2.ONE, 0.25)
+		await tween.finished
+		_setup_ui_neon_style()
 
 
 ## Animacja utraty punktów (czerwone błyskanie i potrząśnięcie napisem)
@@ -264,7 +335,7 @@ func _on_star_collected(points: int = 1) -> void:
 	stars_collected += 1
 	score += points # Wywoła setter score i _update_ui()
 	_update_ui() # Zapewnia natychmiastowe odświeżenie UI i sprawdzenie warunku wygranej
-	print("🏆 Aktualny wynik: %d | Gwiazdki: %d/%d" % [score, stars_collected, total_stars])
+	print(" Aktualny wynik: %d | Gwiazdki: %d/%d" % [score, stars_collected, total_stars])
 	
 	_animate_score_pop()
 	
@@ -273,7 +344,7 @@ func _on_star_collected(points: int = 1) -> void:
 		_trigger_ufo_chase()
 	
 	if score % 5 == 0 and player != null and player.has_method("apply_speed_boost"):
-		print("🎉 SUPER BONUS za 5 gwiazdek!")
+		print(" SUPER BONUS za 5 gwiazdek!")
 		player.call("apply_speed_boost", 1.8, 3.5)
 
 
@@ -310,7 +381,7 @@ func _count_total_stars() -> void:
 					total_stars += 1
 
 
-## Odświeża napis z liczbą punktów, numerem poziomu i postępem gwiazdek
+## Odświeża napis z liczbą punktów, numerem poziomu, postępem gwiazdek oraz liczbą żyć
 func _update_ui() -> void:
 	if score_label:
 		if total_stars > 0:
@@ -318,17 +389,31 @@ func _update_ui() -> void:
 		else:
 			score_label.text = "Poziom %d | Punkty: %d" % [current_level, score]
 			
+	if lives_label:
+		var hearts_text := ""
+		for i in range(MAX_LIVES):
+			if i < current_lives:
+				hearts_text += "[x]"
+			else:
+				hearts_text += "[ ]"
+		lives_label.text = "Życia: %s" % hearts_text
+			
 	# Sprawdzamy warunek ukończenia poziomu (Victory)
 	if total_stars > 0 and stars_collected >= total_stars and not is_game_won:
 		_on_level_won()
 
 
-## Nadaje etykiecie licznika neonowy żółty kolor z zieloną poświatą
+## Nadaje etykiecie licznika neonowy żółty kolor z zieloną poświatą oraz sercom żywy neonowy kolor
 func _setup_ui_neon_style() -> void:
 	if score_label:
 		score_label.add_theme_color_override("font_color", Color(1.0, 0.95, 0.2, 1.0))
 		score_label.add_theme_color_override("font_outline_color", Color(0.2, 3.0, 0.5, 1.0))
 		score_label.add_theme_constant_override("outline_size", 12)
+		
+	if lives_label:
+		lives_label.add_theme_color_override("font_color", Color(1.0, 0.25, 0.35, 1.0))
+		lives_label.add_theme_color_override("font_outline_color", Color(0.8, 0.05, 0.2, 1.0))
+		lives_label.add_theme_constant_override("outline_size", 10)
 
 
 ## Animacja wyskakiwania licznika punktów
@@ -401,7 +486,7 @@ func _on_level_won() -> void:
 		return
 	is_game_won = true
 	level_won.emit()
-	print("🏆 BRAWO! Wszystkie gwiazdki zebrane! POZIOM UKOŃCZONY!")
+	print(" BRAWO! Wszystkie gwiazdki zebrane! POZIOM UKOŃCZONY!")
 	
 	# 1. Zatrzymanie ruchu gracza oraz przeszkód (meteorów / UFO)
 	_freeze_gameplay()
@@ -445,7 +530,7 @@ func _setup_victory_ui() -> void:
 		
 		restart_button = Button.new()
 		restart_button.name = "RestartButton"
-		restart_button.text = "🚀 Zagraj jeszcze raz 🚀"
+		restart_button.text = " Zagraj jeszcze raz "
 		restart_button.set_anchors_preset(Control.PRESET_CENTER)
 		restart_button.offset_left = -175.0
 		restart_button.offset_top = 10.0
@@ -500,6 +585,8 @@ func _show_victory_screen() -> void:
 	
 	if victory_label:
 		victory_label.text = "POZIOM %d UKOŃCZONY! BRAWO!" % current_level
+		victory_label.add_theme_color_override("font_color", Color(1.0, 0.95, 0.1, 1.0))
+		victory_label.add_theme_color_override("font_outline_color", Color(0.9, 0.1, 1.2, 1.0))
 		victory_label.visible = true
 		victory_label.scale = Vector2.ZERO
 		victory_label.pivot_offset = victory_label.size / 2.0
@@ -517,7 +604,7 @@ func _show_victory_screen() -> void:
 		
 	if restart_button:
 		var next_ufo_count: int = current_level + 1
-		restart_button.text = "🚀 Poziom %d (+1 UFO 🛸, +%d ⭐) 🚀" % [current_level + 1, stars_increase_per_level]
+		restart_button.text = " Poziom %d (+1 UFO , +%d ) " % [current_level + 1, stars_increase_per_level]
 		restart_button.visible = true
 		restart_button.scale = Vector2.ZERO
 		restart_button.pivot_offset = restart_button.size / 2.0
@@ -586,7 +673,7 @@ func _spawn_victory_confetti() -> void:
 	star_rain.emitting = true
 
 
-## Obsługa klawiatury – Space/Enter przechodzi do kolejnego poziomu, 'R' resetuje do poziomu 1, F11 przełącza pełny ekran
+## Obsługa klawiatury - Space/Enter przechodzi do kolejnego poziomu (lub restartuje po Game Over), 'R' resetuje do poziomu 1, F11 przełącza pełny ekran
 func _unhandled_input(event: InputEvent) -> void:
 	# Przełączanie trybu pełnoekranowego klawiszem F11 lub Alt+Enter
 	if event is InputEventKey and event.pressed and not event.echo:
@@ -594,7 +681,7 @@ func _unhandled_input(event: InputEvent) -> void:
 			toggle_fullscreen()
 			return
 			
-	if is_game_won:
+	if is_game_won or current_lives <= 0:
 		if event.is_action_pressed("ui_accept"):
 			restart_game()
 		elif event is InputEventKey and event.pressed and not event.echo:
@@ -611,25 +698,28 @@ func _unhandled_input(event: InputEvent) -> void:
 func toggle_fullscreen() -> void:
 	if DisplayServer.window_get_mode() == DisplayServer.WINDOW_MODE_FULLSCREEN:
 		DisplayServer.window_set_mode(DisplayServer.WINDOW_MODE_WINDOWED)
-		print("🖥️ Zmieniono tryb na okienkowy")
+		print(" Zmieniono tryb na okienkowy")
 	else:
 		DisplayServer.window_set_mode(DisplayServer.WINDOW_MODE_FULLSCREEN)
-		print("📺 Zmieniono tryb na pełny ekran")
+		print(" Zmieniono tryb na pełny ekran")
 
 
-## Przechodzi do kolejnego poziomu ze zwiększoną trudnością (nowe UFO w losowym miejscu, więcej gwiazdek, szybsze UFO)
+## Przechodzi do kolejnego poziomu (jeśli wygrana) lub restartuje do Poziomu 1 (jeśli Game Over)
 func restart_game() -> void:
-	if is_game_won:
+	if current_lives <= 0:
+		reset_progression()
+	elif is_game_won:
 		current_level += 1
 		extra_stars += stars_increase_per_level
 		meteor_speed_multiplier *= meteor_speed_increase_factor
-		print("🚀 Start Poziomu %d! Liczba UFO: %d, Dodano gwiazdek: +%d, nowa prędkość: x%.2f" % [current_level, current_level, extra_stars, meteor_speed_multiplier])
+		print(" Start Poziomu %d! Liczba UFO: %d, Dodano gwiazdek: +%d, nowa prędkość: x%.2f" % [current_level, current_level, extra_stars, meteor_speed_multiplier])
 	get_tree().reload_current_scene()
 
 
-## Resetuje całą progresję trudności z powrotem do Poziomu 1 (np. pod klawiszem 'R')
+## Resetuje całą progresję trudności oraz życia z powrotem do Poziomu 1 (np. po Game Over lub pod klawiszem 'R')
 static func reset_progression() -> void:
 	current_level = 1
 	extra_stars = 0
 	meteor_speed_multiplier = 1.0
-	print("🔄 Zresetowano grę do Poziomu 1 (1 bazowe UFO)!")
+	current_lives = MAX_LIVES
+	print(" Zresetowano grę do Poziomu 1 (3 życia, 1 bazowe UFO)!")

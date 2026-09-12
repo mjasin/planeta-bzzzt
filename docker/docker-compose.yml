@@ -1,0 +1,67 @@
+# ═══════════════════════════════════════════════════════
+# Planeta Bzzzt! — Docker Compose
+#
+# Usage:
+#   1. Copy .env.example → .env and fill in your domain
+#   2. Run: ./init-letsencrypt.sh
+#   3. Run: docker compose up -d
+# ═══════════════════════════════════════════════════════
+
+services:
+
+  # ── Nginx web server ────────────────────────────────
+  web:
+    build:
+      context: ..                          # Project root (planeta-bzzzt/)
+      dockerfile: docker/nginx/Dockerfile
+    container_name: planeta-bzzzt-web
+    restart: unless-stopped
+    environment:
+      - DOMAIN=${DOMAIN}
+    ports:
+      - "80:80"
+      - "443:443"
+    volumes:
+      # Game exports — mounted as volumes so you can update exports
+      # without rebuilding the image
+      - ../web/2d:/usr/share/nginx/html/game/2d:ro
+      - ../web/3d:/usr/share/nginx/html/game/3d:ro
+      # Let's Encrypt certificates (managed by certbot service)
+      - ./certbot/conf:/etc/letsencrypt:ro
+      - ./certbot/www:/var/www/certbot:ro
+    networks:
+      - bzzzt-net
+    depends_on:
+      - certbot
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "10m"
+        max-file: "3"
+
+  # ── Certbot — SSL certificate auto-renewal ──────────
+  certbot:
+    image: certbot/certbot:latest
+    container_name: planeta-bzzzt-certbot
+    restart: unless-stopped
+    volumes:
+      - ./certbot/conf:/etc/letsencrypt
+      - ./certbot/www:/var/www/certbot
+    # Auto-renew certificates every 12 hours
+    entrypoint: >
+      /bin/sh -c "trap exit TERM;
+      while :; do
+        certbot renew --webroot --webroot-path=/var/www/certbot --quiet;
+        sleep 12h & wait $${!};
+      done"
+    networks:
+      - bzzzt-net
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "5m"
+        max-file: "2"
+
+networks:
+  bzzzt-net:
+    driver: bridge

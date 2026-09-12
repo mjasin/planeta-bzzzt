@@ -1,0 +1,411 @@
+<!DOCTYPE html>
+<html lang="pl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Planeta Bzzzt! 🪐</title>
+    <meta name="description" content="Gra kosmiczna stworzona przez AI podczas Robo Challenge 2026 — Naukowa Wioska, 12 września 2026!">
+    <meta property="og:title" content="Planeta Bzzzt! 🪐 — Robo Challenge 2026">
+    <meta property="og:description" content="Gra stworzona przez AI podczas Robo Challenge 2026 organizowanego przez Naukową Wioskę. Graj teraz w przeglądarce — zero instalacji!"
+    <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🪐</text></svg>">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700;900&family=Exo+2:ital,wght@0,300;0,400;0,600;1,300&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+    <!-- Animated starfield canvas -->
+    <canvas id="stars-canvas" aria-hidden="true"></canvas>
+
+    <!-- ═══════════════════════════════════════
+         HERO SECTION
+    ═══════════════════════════════════════ -->
+    <section class="hero" aria-label="Strona główna">
+        <div class="hero-content">
+            <div class="badge">
+                <span class="badge-dot"></span>
+                🤖 Robo Challenge 2026 — Naukowa Wioska
+            </div>
+
+            <h1 class="hero-title">
+                <span class="planet-anim" aria-hidden="true">🪐</span>
+                <span class="title-planet">Planeta</span>
+                <span class="title-bzzzt">Bzzzt!</span>
+            </h1>
+
+            <p class="hero-subtitle">
+                Gra stworzona przez <strong>sztuczną inteligencję</strong> na żywo<br>
+                podczas <a href="https://www.facebook.com/naukowawioska.official/posts/1835639101798852" target="_blank" rel="noopener" class="hero-event-link">Robo Challenge 2026</a> · 12 września 2026 ✨
+            </p>
+
+            <div class="hero-ctas">
+                <a href="#games" class="btn btn-primary">
+                    <span>🚀</span> Graj teraz!
+                </a>
+                <a href="#about" class="btn btn-secondary">
+                    <span>📖</span> Dowiedz się więcej
+                </a>
+            </div>
+
+            <!-- Stats bar -->
+            <div class="stats-bar" aria-label="Statystyki gry">
+                <div class="stat">
+                    <span class="stat-value">2</span>
+                    <span class="stat-label">wersje gry</span>
+                </div>
+                <div class="stat-divider" aria-hidden="true"></div>
+                <div class="stat">
+                    <span class="stat-value">∞</span>
+                    <span class="stat-label">zabawy</span>
+                </div>
+                <div class="stat-divider" aria-hidden="true"></div>
+                <div class="stat">
+                    <span class="stat-value">100%</span>
+                    <span class="stat-label">AI powered</span>
+                </div>
+            </div>
+        </div>
+
+        <div class="hero-scroll-hint" aria-hidden="true">
+            <span>↓</span>
+        </div>
+    </section>
+
+    <!-- ═══════════════════════════════════════
+         GAMES SECTION
+    ═══════════════════════════════════════ -->
+    <section id="games" class="games-section" aria-labelledby="games-heading">
+        <div class="section-header">
+            <h2 id="games-heading" class="section-title">Wybierz wersję gry</h2>
+            <p class="section-subtitle">Obie wersje działają bezpośrednio w przeglądarce — zero instalacji!</p>
+        </div>
+
+        <div class="games-grid">
+
+            <!-- 2D Card -->
+            <article class="game-card" onclick="openGame('2d')" role="button" tabindex="0"
+                     aria-label="Zagraj w wersję 2D - Planeta Bzzzt"
+                     onkeydown="if(event.key==='Enter'||event.key===' ')openGame('2d')">
+                <div class="card-glow card-glow-blue" aria-hidden="true"></div>
+                <div class="card-tag card-tag-blue">WERSJA 2D</div>
+
+                <div class="card-visual" aria-hidden="true">
+                    <div class="card-planet card-planet-2d">🛸</div>
+                    <div class="card-orbit card-orbit-2d"></div>
+                    <div class="card-star card-star-1">⭐</div>
+                    <div class="card-star card-star-2">💫</div>
+                    <div class="card-star card-star-3">✨</div>
+                </div>
+
+                <div class="card-body">
+                    <h3 class="card-title">Klasyczna 2D</h3>
+                    <p class="card-desc">
+                        Top-down space shooter! Zbieraj gwiazdy, unikaj meteorów,
+                        walcz z UFO i wrogami. Klasyczna akcja kosmiczna!
+                    </p>
+                    <ul class="card-features" aria-label="Funkcje gry 2D">
+                        <li>⭐ Zbieranie gwiazd i punktów</li>
+                        <li>☄️ Unikanie meteorytów</li>
+                        <li>🛸 Walka z UFO</li>
+                        <li>🌀 Portale teleportacyjne</li>
+                    </ul>
+                </div>
+
+                <button class="play-btn play-btn-blue" onclick="openGame('2d'); event.stopPropagation()">
+                    <span>🎮</span> Zagraj!
+                </button>
+            </article>
+
+            <!-- 3D Card -->
+            <article class="game-card game-card-featured" onclick="openGame('3d')" role="button" tabindex="0"
+                     aria-label="Zagraj w wersję 3D - Planeta Bzzzt (Polecane)"
+                     onkeydown="if(event.key==='Enter'||event.key===' ')openGame('3d')">
+                <div class="card-glow card-glow-purple" aria-hidden="true"></div>
+                <div class="card-featured-ribbon" aria-label="Nowe">🌟 NOWOŚĆ</div>
+                <div class="card-tag card-tag-purple">WERSJA 3D</div>
+
+                <div class="card-visual" aria-hidden="true">
+                    <div class="card-planet card-planet-3d">🚀</div>
+                    <div class="card-orbit card-orbit-3d"></div>
+                    <div class="card-star card-star-4">🌟</div>
+                    <div class="card-star card-star-5">💥</div>
+                    <div class="card-star card-star-6">⚡</div>
+                </div>
+
+                <div class="card-body">
+                    <h3 class="card-title">Przygoda 3D</h3>
+                    <p class="card-desc">
+                        Lataj w pełnym 3D przez przestrzeń kosmiczną! Nowe mechaniki,
+                        bomby, lasery i jeszcze więcej kosmicznego szaleństwa!
+                    </p>
+                    <ul class="card-features" aria-label="Funkcje gry 3D">
+                        <li>🚀 Loty w 3D</li>
+                        <li>💣 Bomby i lasery</li>
+                        <li>🪐 Planeta centralna</li>
+                        <li>👾 Inteligentni wrogowie</li>
+                    </ul>
+                </div>
+
+                <button class="play-btn play-btn-purple" onclick="openGame('3d'); event.stopPropagation()">
+                    <span>🚀</span> Zagraj!
+                </button>
+            </article>
+
+        </div>
+    </section>
+
+    <!-- ═══════════════════════════════════════
+         HOW IT WAS MADE
+    ═══════════════════════════════════════ -->
+    <section id="about" class="about-section" aria-labelledby="about-heading">
+        <div class="about-content">
+            <div class="section-header">
+                <h2 id="about-heading" class="section-title section-title-purple">Jak powstała ta gra? 🤖</h2>
+                <p class="section-subtitle">
+                    Robo Challenge 2026 · <a href="https://www.facebook.com/naukowawioska.official" target="_blank" rel="noopener" style="color:var(--neon-purple);text-decoration:none;">Naukowa Wioska</a> · 12 września 2026
+                </p>
+            </div>
+
+            <div class="about-grid">
+                <div class="about-card">
+                    <div class="about-icon" aria-hidden="true">🏫</div>
+                    <h3>Robo Challenge 2026</h3>
+                    <p>3 godziny pełne robotyki, programowania, eksperymentów i sztucznej inteligencji — organizowane przez Naukową Wioskę.</p>
+                </div>
+                <div class="about-card">
+                    <div class="about-icon" aria-hidden="true">🎙️</div>
+                    <h3>Vibe Coding na żywo</h3>
+                    <p>Zamiast pisać kod ręcznie — dyktowaliśmy pomysły AI głosem i w kilka sekund widzieliśmy efekty na ekranie!</p>
+                </div>
+                <div class="about-card">
+                    <div class="about-icon" aria-hidden="true">🤖</div>
+                    <h3>Antigravity AI</h3>
+                    <p>Agent AI pisał kod GDScript w silniku Godot 4 na żywo, reagując na każdy pomysł uczestników w czasie rzeczywistym.</p>
+                </div>
+                <div class="about-card">
+                    <div class="about-icon" aria-hidden="true">🌐</div>
+                    <h3>Zero instalacji</h3>
+                    <p>Godot 4 eksportuje grę do WebAssembly — działa w każdej nowoczesnej przeglądarce, bez pobierania czegokolwiek!</p>
+                </div>
+            </div>
+
+            <!-- Tech stack -->
+            <div class="tech-stack" aria-label="Użyte technologie">
+                <span class="tech-badge">Godot 4.7</span>
+                <span class="tech-badge">GDScript</span>
+                <span class="tech-badge">WebAssembly</span>
+                <span class="tech-badge">Antigravity AI</span>
+                <span class="tech-badge">Vibe Coding</span>
+                <span class="tech-badge">Docker</span>
+            </div>
+        </div>
+    </section>
+
+    <!-- ═══════════════════════════════════════
+         FOOTER
+    ═══════════════════════════════════════ -->
+    <footer class="site-footer" aria-label="Stopka strony">
+        <div class="footer-content">
+            <div class="footer-logo" aria-hidden="true">🪐</div>
+            <p class="footer-title">Planeta Bzzzt!</p>
+            <p class="footer-sub">
+                Stworzona podczas
+                <a href="https://www.facebook.com/naukowawioska.official/posts/1835639101798852" target="_blank" rel="noopener">Robo Challenge 2026</a>
+                &middot; <a href="https://www.facebook.com/naukowawioska.official" target="_blank" rel="noopener">Naukowa Wioska</a>
+                &middot; 12 września 2026
+            </p>
+            <p class="footer-powered">
+                Powered by <a href="https://godotengine.org" target="_blank" rel="noopener">Godot 4</a>
+                &amp; <a href="https://gemini.google.com" target="_blank" rel="noopener">Antigravity AI</a>
+            </p>
+        </div>
+    </footer>
+
+    <!-- ═══════════════════════════════════════
+         GAME MODAL
+    ═══════════════════════════════════════ -->
+    <div id="game-modal" class="modal" role="dialog" aria-modal="true" aria-label="Okno gry">
+        <div class="modal-backdrop" onclick="closeGame()" aria-hidden="true"></div>
+
+        <div class="modal-window">
+            <!-- Modal header -->
+            <div class="modal-header">
+                <div class="modal-title-bar">
+                    <span class="modal-dot modal-dot-red" aria-hidden="true"></span>
+                    <span class="modal-dot modal-dot-yellow" aria-hidden="true"></span>
+                    <span class="modal-dot modal-dot-green" aria-hidden="true"></span>
+                    <span id="modal-game-title" class="modal-game-name">Planeta Bzzzt!</span>
+                </div>
+                <div class="modal-controls">
+                    <button class="modal-fullscreen-btn" onclick="toggleFullscreen()" aria-label="Pełny ekran" title="Pełny ekran">
+                        ⛶
+                    </button>
+                    <button class="modal-close-btn" onclick="closeGame()" aria-label="Zamknij grę">
+                        ✕ Zamknij
+                    </button>
+                </div>
+            </div>
+
+            <!-- Game area -->
+            <div class="modal-game-area" id="modal-game-area">
+                <!-- Loading overlay -->
+                <div class="game-loader" id="game-loader" aria-live="polite" aria-label="Ładowanie gry">
+                    <div class="loader-rocket" aria-hidden="true">🚀</div>
+                    <p class="loader-text">Ładowanie gry…</p>
+                    <div class="loader-bar" aria-hidden="true">
+                        <div class="loader-bar-fill"></div>
+                    </div>
+                    <p class="loader-hint">WebAssembly — pierwsze uruchomienie może chwilę potrwać ⏳</p>
+                </div>
+
+                <!-- Game iframe -->
+                <iframe
+                    id="game-frame"
+                    title="Planeta Bzzzt! — gra"
+                    allow="autoplay; fullscreen; gamepad"
+                ></iframe>
+            </div>
+        </div>
+    </div>
+
+    <script>
+    // ─────────────────────────────────────────
+    // STARFIELD CANVAS
+    // ─────────────────────────────────────────
+    (function () {
+        const canvas = document.getElementById('stars-canvas');
+        const ctx = canvas.getContext('2d');
+        let stars = [];
+
+        function resize() {
+            canvas.width  = window.innerWidth;
+            canvas.height = window.innerHeight;
+        }
+
+        function initStars(n = 220) {
+            stars = Array.from({ length: n }, () => ({
+                x:       Math.random() * canvas.width,
+                y:       Math.random() * canvas.height,
+                r:       Math.random() * 1.4 + 0.3,
+                alpha:   Math.random(),
+                phase:   Math.random() * Math.PI * 2,
+                speed:   Math.random() * 0.015 + 0.005,
+                drift:   (Math.random() - 0.5) * 0.06,
+            }));
+        }
+
+        function draw() {
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+            const now = performance.now() * 0.001;
+            stars.forEach(s => {
+                s.alpha = 0.25 + 0.75 * (0.5 + 0.5 * Math.sin(now * s.speed * 6 + s.phase));
+                s.x = (s.x + s.drift + canvas.width) % canvas.width;
+                ctx.globalAlpha = s.alpha;
+                ctx.fillStyle = '#fff';
+                ctx.beginPath();
+                ctx.arc(s.x, s.y, s.r, 0, Math.PI * 2);
+                ctx.fill();
+            });
+            ctx.globalAlpha = 1;
+            requestAnimationFrame(draw);
+        }
+
+        window.addEventListener('resize', () => { resize(); initStars(); });
+        resize();
+        initStars();
+        draw();
+    })();
+
+    // ─────────────────────────────────────────
+    // GAME MODAL
+    // ─────────────────────────────────────────
+    const GAME_NAMES = {
+        '2d': '🛸 Planeta Bzzzt! — Wersja 2D',
+        '3d': '🚀 Planeta Bzzzt! — Wersja 3D',
+    };
+
+    const frame  = document.getElementById('game-frame');
+    const modal  = document.getElementById('game-modal');
+    const loader = document.getElementById('game-loader');
+
+    // Detect touch/mobile: coarse pointer = no precise mouse
+    function isTouchDevice() {
+        return window.matchMedia('(hover: none) and (pointer: coarse)').matches;
+    }
+
+    // Wire up load event — not inline, so function is always defined first
+    frame.addEventListener('load', function () {
+        if (!frame.src || frame.src === 'about:blank' || frame.src === window.location.href) return;
+        loader.style.display = 'none';
+        frame.style.opacity  = '1';
+    });
+
+    function openGame(version) {
+        // On mobile: open directly in new tab — best UX for Godot touch input
+        if (isTouchDevice()) {
+            window.open(`/game/${version}/index.html`, '_blank', 'noopener');
+            return;
+        }
+
+        // Desktop: iframe modal
+        const title = document.getElementById('modal-game-title');
+        title.textContent    = GAME_NAMES[version] || 'Planeta Bzzzt!';
+        loader.style.display = 'flex';
+        frame.style.opacity  = '0';
+        frame.src            = `/game/${version}/index.html`;
+
+        modal.classList.add('active');
+        document.body.style.overflow = 'hidden';
+        modal.focus();
+    }
+
+    function closeGame() {
+        modal.classList.remove('active');
+        setTimeout(() => {
+            frame.src = 'about:blank';
+            loader.style.display = 'flex';
+            frame.style.opacity  = '0';
+        }, 300);
+        document.body.style.overflow = '';
+    }
+
+    function toggleFullscreen() {
+        const area = document.getElementById('modal-game-area');
+        if (!document.fullscreenElement) {
+            area.requestFullscreen().catch(err => console.warn('Fullscreen:', err));
+        } else {
+            document.exitFullscreen();
+        }
+    }
+
+    // Expose to inline onclick handlers in HTML
+    window.openGame         = openGame;
+    window.closeGame        = closeGame;
+    window.toggleFullscreen = toggleFullscreen;
+
+    // Close on Escape
+    document.addEventListener('keydown', e => {
+        if (e.key === 'Escape') closeGame();
+    });
+
+    // Update play button labels on mobile
+    if (isTouchDevice()) {
+        document.querySelectorAll('.play-btn').forEach(btn => {
+            btn.innerHTML = btn.innerHTML.replace('Zagraj!', 'Zagraj! 🔗');
+            btn.setAttribute('title', 'Otworzy grę w nowej karcie');
+        });
+    }
+
+
+    // Smooth scroll for anchor links
+    document.querySelectorAll('a[href^="#"]').forEach(a => {
+        a.addEventListener('click', e => {
+            e.preventDefault();
+            const target = document.querySelector(a.getAttribute('href'));
+            if (target) target.scrollIntoView({ behavior: 'smooth' });
+        });
+    });
+    </script>
+</body>
+</html>
