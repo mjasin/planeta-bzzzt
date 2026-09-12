@@ -104,10 +104,10 @@ section {
     gap: 0.5rem;
     padding: 0.85rem 2rem;
     border-radius: var(--radius-full);
-    font-family: var(--font-display);
-    font-size: 0.95rem;
-    font-weight: 700;
-    letter-spacing: 0.04em;
+    font-family: var(--font-body);
+    font-size: 1.05rem;
+    font-weight: 600;
+    letter-spacing: 0.02em;
     text-decoration: none;
     transition: all var(--transition-mid);
     cursor: pointer;
@@ -128,14 +128,14 @@ section {
 }
 
 .btn-secondary {
-    background: transparent;
+    background: rgba(255, 255, 255, 0.04);
     color: var(--text-primary);
     border: 1px solid rgba(255, 255, 255, 0.2);
 }
 .btn-secondary:hover,
 .btn-secondary:focus-visible {
-    border-color: rgba(255, 255, 255, 0.5);
-    background: rgba(255, 255, 255, 0.05);
+    border-color: rgba(255, 255, 255, 0.6);
+    background: rgba(255, 255, 255, 0.1);
     transform: translateY(-2px);
     outline: none;
 }
