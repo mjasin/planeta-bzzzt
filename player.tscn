@@ -1,8 +1,9 @@
-[gd_scene load_steps=6 format=3]
+[gd_scene load_steps=8 format=3]
 
 [ext_resource type="Script" path="res://player.gd" id="1_player"]
 [ext_resource type="Texture2D" path="res://assets/player.svg" id="2_player_tex"]
 [ext_resource type="Texture2D" path="res://assets/sword.svg" id="3_sword_tex"]
+[ext_resource type="Texture2D" path="res://assets/shield.svg" id="4_shield_tex"]
 
 [sub_resource type="RectangleShape2D" id="RectangleShape2D_1"]
 size = Vector2(64, 64)
@@ -10,6 +11,9 @@ size = Vector2(64, 64)
 [sub_resource type="CapsuleShape2D" id="CapsuleShape2D_sword"]
 radius = 18.0
 height = 70.0
+
+[sub_resource type="CircleShape2D" id="CircleShape2D_shield"]
+radius = 54.0
 
 [node name="Player" type="CharacterBody2D" groups=["player"]]
 script = ExtResource("1_player")
@@ -37,3 +41,15 @@ texture = ExtResource("3_sword_tex")
 [node name="CollisionShape2D" type="CollisionShape2D" parent="SwordPivot/SwordArea"]
 position = Vector2(0, -22)
 shape = SubResource("CapsuleShape2D_sword")
+
+[node name="ShieldArea" type="Area2D" parent="." groups=["player_shield"]]
+visible = false
+monitoring = false
+monitorable = false
+
+[node name="Sprite2D" type="Sprite2D" parent="ShieldArea"]
+scale = Vector2(0.85, 0.85)
+texture = ExtResource("4_shield_tex")
+
+[node name="CollisionShape2D" type="CollisionShape2D" parent="ShieldArea"]
+shape = SubResource("CircleShape2D_shield")

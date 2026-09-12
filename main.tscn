@@ -80,8 +80,8 @@ grow_vertical = 0
 theme_override_colors/font_color = Color(0.4, 2.0, 3.5, 0.9)
 theme_override_colors/font_outline_color = Color(0.05, 0.2, 0.5, 0.9)
 theme_override_constants/outline_size = 6
-theme_override_font_sizes/font_size = 20
-text = "⚔️ SPACJA / LPM: Atak mieczem | 🌀 Portal: Teleportacja"
+theme_override_font_sizes/font_size = 18
+text = "⚔️ LPM/SPACJA: Miecz | 🛡️ PPM/SHIFT: Tarcza (odbija pociski) | 🌀 Portal: Teleport"
 
 [node name="VictoryContainer" type="Control" parent="CanvasLayer/UI"]
 visible = false
