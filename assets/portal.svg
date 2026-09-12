@@ -1,0 +1,39 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 128 128" width="128" height="128">
+  <defs>
+    <filter id="portal-glow" x="-40%" y="-40%" width="180%" height="180%">
+      <feGaussianBlur stdDeviation="5" result="blur" />
+      <feComposite in="SourceGraphic" in2="blur" operator="over" />
+    </filter>
+    <radialGradient id="portal-core-grad" cx="50%" cy="50%" r="50%">
+      <stop offset="0%" stop-color="#ffffff" />
+      <stop offset="35%" stop-color="#00ffff" />
+      <stop offset="70%" stop-color="#7900ff" />
+      <stop offset="100%" stop-color="#000033" stop-opacity="0" />
+    </radialGradient>
+    <linearGradient id="portal-ring-grad" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#00f0ff" />
+      <stop offset="50%" stop-color="#bc13fe" />
+      <stop offset="100%" stop-color="#00f0ff" />
+    </linearGradient>
+  </defs>
+
+  <!-- Outer Swirling Glow Ring -->
+  <circle cx="64" cy="64" r="54" fill="none" stroke="url(#portal-ring-grad)" stroke-width="4" stroke-dasharray="16 8" filter="url(#portal-glow)"/>
+  <circle cx="64" cy="64" r="44" fill="none" stroke="#00f0ff" stroke-width="3" stroke-dasharray="12 6" filter="url(#portal-glow)"/>
+
+  <!-- Swirl Vortex Blades -->
+  <path d="M 64 20 Q 85 45 64 64" fill="none" stroke="#bc13fe" stroke-width="4" stroke-linecap="round" filter="url(#portal-glow)"/>
+  <path d="M 108 64 Q 85 85 64 64" fill="none" stroke="#00f0ff" stroke-width="4" stroke-linecap="round" filter="url(#portal-glow)"/>
+  <path d="M 64 108 Q 43 85 64 64" fill="none" stroke="#bc13fe" stroke-width="4" stroke-linecap="round" filter="url(#portal-glow)"/>
+  <path d="M 20 64 Q 43 43 64 64" fill="none" stroke="#00f0ff" stroke-width="4" stroke-linecap="round" filter="url(#portal-glow)"/>
+
+  <!-- Energy Nodes on Rim -->
+  <circle cx="64" cy="10" r="5" fill="#00ffff" filter="url(#portal-glow)"/>
+  <circle cx="118" cy="64" r="5" fill="#bc13fe" filter="url(#portal-glow)"/>
+  <circle cx="64" cy="118" r="5" fill="#00ffff" filter="url(#portal-glow)"/>
+  <circle cx="10" cy="64" r="5" fill="#bc13fe" filter="url(#portal-glow)"/>
+
+  <!-- Inner Swirling Core -->
+  <circle cx="64" cy="64" r="34" fill="url(#portal-core-grad)" filter="url(#portal-glow)"/>
+  <circle cx="64" cy="64" r="14" fill="#ffffff"/>
+</svg>
