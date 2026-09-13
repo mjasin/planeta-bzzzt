@@ -1,8 +1,8 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="pl">
 	<head>
 		<meta charset="utf-8">
-		<meta name="viewport" content="width=device-width, user-scalable=no, initial-scale=1.0">
+		<meta name="viewport" content="width=device-width, user-scalable=no, initial-scale=1.0, maximum-scale=1.0">
 		<title>Planeta Bzzzt!</title>
 		<style>
 html, body, #canvas {
@@ -16,6 +16,7 @@ body {
 	background-color: black;
 	overflow: hidden;
 	touch-action: none;
+	font-family: system-ui, -apple-system, sans-serif;
 }
 
 #canvas {
@@ -38,12 +39,13 @@ body {
 }
 
 #status {
-	background-color: #242424;
+	background-color: #0b0d19;
 	display: flex;
 	flex-direction: column;
 	justify-content: center;
 	align-items: center;
 	visibility: hidden;
+	z-index: 10;
 }
 
 #status-splash {
@@ -90,7 +92,9 @@ body {
 	z-index: 1;
 }
 
-/* Landscape Mode Lock/Prompt on Mobile */
+/* ══════════════════════════════════════════════
+   MOBILE LANDSCAPE PROMPT & ORIENTATION LOCK
+   ══════════════════════════════════════════════ */
 #landscape-prompt {
 	display: none;
 	position: fixed;
@@ -104,7 +108,6 @@ body {
 	text-align: center;
 	padding: 24px;
 	box-sizing: border-box;
-	font-family: system-ui, -apple-system, sans-serif;
 }
 
 .landscape-icon {
@@ -135,6 +138,7 @@ body {
 	100% { transform: rotate(0deg); }
 }
 
+/* Show prompt ONLY on mobile/touch screens in portrait */
 @media screen and (orientation: portrait) and (max-width: 1024px) and (hover: none) {
 	#landscape-prompt {
 		display: flex !important;
@@ -146,6 +150,7 @@ body {
 
 	</head>
 	<body>
+		<!-- Landscape Mode Prompt for Mobile -->
 		<div id="landscape-prompt">
 			<div class="landscape-icon">📱🔄</div>
 			<div class="landscape-title">Obróć telefon poziomo</div>
@@ -153,11 +158,11 @@ body {
 		</div>
 
 		<canvas id="canvas">
-			Your browser does not support the canvas tag.
+			Twoja przeglądarka nie obsługuje elementu Canvas.
 		</canvas>
 
 		<noscript>
-			Your browser does not support JavaScript.
+			Twoja przeglądarka nie ma włączonej obsługi JavaScript.
 		</noscript>
 
 		<div id="status">
@@ -168,15 +173,17 @@ body {
 
 		<script src="index.js"></script>
 		<script>
-const GODOT_CONFIG = {"args":[],"canvasResizePolicy":2,"emscriptenPoolSize":8,"ensureCrossOriginIsolationHeaders":true,"executable":"index","experimentalVK":false,"fileSizes":{"index.pck":11225676,"index.wasm":39513091},"focusCanvas":true,"gdextensionLibs":[],"godotPoolSize":4};
+const GODOT_CONFIG = {"args":[],"canvasResizePolicy":2,"emscriptenPoolSize":8,"ensureCrossOriginIsolationHeaders":true,"executable":"index","experimentalVK":false,"fileSizes":{"index.pck":11227100,"index.wasm":39513091},"focusCanvas":true,"gdextensionLibs":[],"godotPoolSize":4};
 const GODOT_THREADS_ENABLED = false;
 const engine = new Engine(GODOT_CONFIG);
 
+// Screen Orientation API attempt
 function tryLockLandscape() {
 	if (screen.orientation && screen.orientation.lock) {
 		screen.orientation.lock('landscape').catch(() => {});
 	}
 }
+
 window.addEventListener('load', tryLockLandscape);
 document.addEventListener('touchstart', tryLockLandscape, { passive: true, once: true });
 document.addEventListener('click', tryLockLandscape, { passive: true, once: true });
@@ -240,7 +247,6 @@ document.addEventListener('click', tryLockLandscape, { passive: true, once: true
 			} catch (err) {
 				serviceWorkerRegistrationPromise = Promise.reject(new Error('Service worker registration failed.'));
 			}
-			// There's a chance that installing the service worker would fix the issue
 			Promise.race([
 				serviceWorkerRegistrationPromise.then((registration) => {
 					if (registration != null) {
@@ -248,18 +254,15 @@ document.addEventListener('click', tryLockLandscape, { passive: true, once: true
 					}
 					return registration;
 				}).then(() => engine.installServiceWorker()),
-				// For some reason, `getRegistration()` can stall
 				new Promise((resolve) => {
 					setTimeout(() => resolve(), 2000);
 				}),
 			]).then(() => {
-				// Reload if there was no error.
 				window.location.reload();
 			}).catch((err) => {
 				console.error('Error while registering service worker:', err);
 			});
 		} else {
-			// Display the message as usual
 			const missingMsg = 'Error\nThe following features required to run Godot projects on the Web are missing:\n';
 			displayFailureNotice(missingMsg + missing.join('\n'));
 		}
