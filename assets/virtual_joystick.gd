@@ -30,7 +30,17 @@ func _ready() -> void:
 	_current_pos = _default_center
 	
 	# Pokazuj joystick tylko na urządzeniach z obsługą dotyku / telefonach / tabletach
-	var has_touch: bool = DisplayServer.is_touchscreen_available() or OS.has_feature("mobile") or OS.has_feature("web_android") or OS.has_feature("web_ios")
+	var has_touch: bool = false
+	if OS.has_feature("web"):
+		# W przeglądarce pytamy bezpośrednio JavaScript czy to urządzenie dotykowe (coarse pointer)
+		var js_touch = JavaScriptBridge.eval("window.matchMedia('(hover: none) and (pointer: coarse)').matches", true)
+		if js_touch != null and js_touch == true:
+			has_touch = true
+		elif OS.has_feature("web_android") or OS.has_feature("web_ios"):
+			has_touch = true
+	else:
+		has_touch = OS.has_feature("mobile") or DisplayServer.is_touchscreen_available()
+		
 	if not has_touch:
 		visible = false
 		set_process_input(false)

@@ -62,7 +62,16 @@ func _ready() -> void:
 		shield_button.button_up.connect(func(): player.touch_shield_pressed = false)
 		
 	# Na desktopie bez dotyku ukrywamy przyciski dotykowe
-	var has_touch: bool = DisplayServer.is_touchscreen_available() or OS.has_feature("mobile") or OS.has_feature("web_android") or OS.has_feature("web_ios")
+	var has_touch: bool = false
+	if OS.has_feature("web"):
+		var js_touch = JavaScriptBridge.eval("window.matchMedia('(hover: none) and (pointer: coarse)').matches", true)
+		if js_touch != null and js_touch == true:
+			has_touch = true
+		elif OS.has_feature("web_android") or OS.has_feature("web_ios"):
+			has_touch = true
+	else:
+		has_touch = OS.has_feature("mobile") or DisplayServer.is_touchscreen_available()
+
 	if not has_touch:
 		if bomb_button: bomb_button.visible = false
 		if shield_button: shield_button.visible = false
