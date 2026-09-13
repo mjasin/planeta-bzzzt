@@ -63,27 +63,33 @@ func _ready() -> void:
 	_trigger_ufo_chase()
 	
 	var touch_sword: Button = get_node_or_null("CanvasLayer/UI/TouchSwordButton")
-	if touch_sword and player and player.has_method("swing_sword"):
-		touch_sword.pressed.connect(player.swing_sword)
-		
 	var touch_shield: Button = get_node_or_null("CanvasLayer/UI/TouchShieldButton")
-	if touch_shield and player and player.has_method("activate_shield"):
-		touch_shield.pressed.connect(player.activate_shield)
+	
+	# Domyślnie ukryte na komputerze PC
+	if touch_sword:
+		touch_sword.visible = false
+		if player and player.has_method("swing_sword"):
+			touch_sword.pressed.connect(player.swing_sword)
+			
+	if touch_shield:
+		touch_shield.visible = false
+		if player and player.has_method("activate_shield"):
+			touch_shield.pressed.connect(player.activate_shield)
 		
-	# Na komputerze ukrywamy przyciski dotykowe
-	var has_touch: bool = false
+	# Pokazujemy TYLKO na urządzeniach z prawdziwym ekranem dotykowym
+	var is_touch_screen: bool = false
 	if OS.has_feature("web"):
-		var js_touch = JavaScriptBridge.eval("window.matchMedia('(hover: none) and (pointer: coarse)').matches", true)
-		if js_touch != null and js_touch == true:
-			has_touch = true
+		var res = JavaScriptBridge.eval("Boolean((navigator.maxTouchPoints && navigator.maxTouchPoints > 0) && window.matchMedia('(pointer: coarse)').matches)", true)
+		if res == true:
+			is_touch_screen = true
 		elif OS.has_feature("web_android") or OS.has_feature("web_ios"):
-			has_touch = true
+			is_touch_screen = true
 	else:
-		has_touch = OS.has_feature("mobile") or DisplayServer.is_touchscreen_available()
+		is_touch_screen = OS.has_feature("mobile") or OS.has_feature("android") or OS.has_feature("ios")
 
-	if not has_touch:
-		if touch_sword: touch_sword.visible = false
-		if touch_shield: touch_shield.visible = false
+	if is_touch_screen:
+		if touch_sword: touch_sword.visible = true
+		if touch_shield: touch_shield.visible = true
 	
 	var total_ufos := get_tree().get_nodes_in_group("ufos").size()
 	print(" Planeta Bzzzt! Poziom %d | Gwiazdki: %d | Liczba UFO: %d | Mnożnik prędkości: x%.2f" % [current_level, total_stars, total_ufos, meteor_speed_multiplier])

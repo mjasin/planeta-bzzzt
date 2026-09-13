@@ -138,6 +138,7 @@ text = "WASD: Ruch | PPM / SHIFT: Tarcza | SPACJA: Bomba | F11: Pełny ekran"
 horizontal_alignment = 1
 
 [node name="VirtualJoystick" type="Control" parent="CanvasLayer/UI"]
+visible = false
 layout_mode = 1
 anchors_preset = 2
 anchor_top = 1.0
@@ -150,6 +151,7 @@ grow_vertical = 0
 script = ExtResource("10_joy")
 
 [node name="ShieldButton" type="Button" parent="CanvasLayer/UI"]
+visible = false
 layout_mode = 1
 anchors_preset = 3
 anchor_left = 1.0
@@ -168,6 +170,7 @@ theme_override_font_sizes/font_size = 18
 text = "Tarcza"
 
 [node name="BombButton" type="Button" parent="CanvasLayer/UI"]
+visible = false
 layout_mode = 1
 anchors_preset = 3
 anchor_left = 1.0

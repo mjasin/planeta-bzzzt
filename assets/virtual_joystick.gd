@@ -23,27 +23,29 @@ var _color_glow: Color = Color(0.66, 0.33, 0.97, 0.25) # Neon purple
 var _color_knob: Color = Color(0.0, 0.83, 1.0, 0.85)
 
 func _ready() -> void:
-	# Ustawiamy domyślny środek joysticka (np. 140px od lewej, 140px od dołu)
+	# Domyślnie ZAWSZE ukryty (na komputerze PC nie pojawi się nigdy)
+	visible = false
+	set_process_input(false)
+	
 	custom_minimum_size = Vector2(200, 200)
 	_default_center = size / 2.0
 	_center_pos = _default_center
 	_current_pos = _default_center
 	
-	# Pokazuj joystick tylko na urządzeniach z obsługą dotyku / telefonach / tabletach
-	var has_touch: bool = false
+	var is_touch_device: bool = false
 	if OS.has_feature("web"):
-		# W przeglądarce pytamy bezpośrednio JavaScript czy to urządzenie dotykowe (coarse pointer)
-		var js_touch = JavaScriptBridge.eval("window.matchMedia('(hover: none) and (pointer: coarse)').matches", true)
-		if js_touch != null and js_touch == true:
-			has_touch = true
+		# W przeglądarce sprawdzamy czy urządzenie posiada punkty dotyku ORAZ wskaźnik coarse (brak myszy)
+		var res = JavaScriptBridge.eval("Boolean((navigator.maxTouchPoints && navigator.maxTouchPoints > 0) && window.matchMedia('(pointer: coarse)').matches)", true)
+		if res == true:
+			is_touch_device = true
 		elif OS.has_feature("web_android") or OS.has_feature("web_ios"):
-			has_touch = true
+			is_touch_device = true
 	else:
-		has_touch = OS.has_feature("mobile") or DisplayServer.is_touchscreen_available()
+		is_touch_device = OS.has_feature("mobile") or OS.has_feature("android") or OS.has_feature("ios")
 		
-	if not has_touch:
-		visible = false
-		set_process_input(false)
+	if is_touch_device:
+		visible = true
+		set_process_input(true)
 
 
 func _draw() -> void:

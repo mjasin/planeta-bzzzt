@@ -55,26 +55,32 @@ func _ready() -> void:
 		restart_button.pressed.connect(restart_scene)
 	if fullscreen_button:
 		fullscreen_button.pressed.connect(toggle_fullscreen)
-	if bomb_button and player:
-		bomb_button.pressed.connect(player.drop_bomb)
-	if shield_button and player:
-		shield_button.button_down.connect(func(): player.touch_shield_pressed = true)
-		shield_button.button_up.connect(func(): player.touch_shield_pressed = false)
+	# Domyślnie ukryte na komputerze PC
+	if bomb_button:
+		bomb_button.visible = false
+		if player:
+			bomb_button.pressed.connect(player.drop_bomb)
+			
+	if shield_button:
+		shield_button.visible = false
+		if player:
+			shield_button.button_down.connect(func(): player.touch_shield_pressed = true)
+			shield_button.button_up.connect(func(): player.touch_shield_pressed = false)
 		
-	# Na desktopie bez dotyku ukrywamy przyciski dotykowe
-	var has_touch: bool = false
+	# Pokazujemy TYLKO na urządzeniach z prawdziwym ekranem dotykowym
+	var is_touch_screen: bool = false
 	if OS.has_feature("web"):
-		var js_touch = JavaScriptBridge.eval("window.matchMedia('(hover: none) and (pointer: coarse)').matches", true)
-		if js_touch != null and js_touch == true:
-			has_touch = true
+		var res = JavaScriptBridge.eval("Boolean((navigator.maxTouchPoints && navigator.maxTouchPoints > 0) && window.matchMedia('(pointer: coarse)').matches)", true)
+		if res == true:
+			is_touch_screen = true
 		elif OS.has_feature("web_android") or OS.has_feature("web_ios"):
-			has_touch = true
+			is_touch_screen = true
 	else:
-		has_touch = OS.has_feature("mobile") or DisplayServer.is_touchscreen_available()
+		is_touch_screen = OS.has_feature("mobile") or OS.has_feature("android") or OS.has_feature("ios")
 
-	if not has_touch:
-		if bomb_button: bomb_button.visible = false
-		if shield_button: shield_button.visible = false
+	if is_touch_screen:
+		if bomb_button: bomb_button.visible = true
+		if shield_button: shield_button.visible = true
 
 
 func _process(delta: float) -> void:
