@@ -29,10 +29,11 @@ func _ready() -> void:
 	_center_pos = _default_center
 	_current_pos = _default_center
 	
-	# Jeśli wykryto urządzenie dotykowe lub mobile
-	var is_mobile := OS.has_feature("mobile") or OS.has_feature("web_android") or OS.has_feature("web_ios")
-	if auto_hide_on_desktop and not is_mobile and not DisplayServer.is_touchscreen_available():
-		modulate.a = 0.35 # Subtelny podgląd na desktopie
+	# Pokazuj joystick tylko na urządzeniach z obsługą dotyku / telefonach / tabletach
+	var has_touch: bool = DisplayServer.is_touchscreen_available() or OS.has_feature("mobile") or OS.has_feature("web_android") or OS.has_feature("web_ios")
+	if not has_touch:
+		visible = false
+		set_process_input(false)
 
 
 func _draw() -> void:

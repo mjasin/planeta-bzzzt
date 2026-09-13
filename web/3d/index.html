@@ -89,12 +89,69 @@ body {
 	text-align: center;
 	z-index: 1;
 }
+
+/* Landscape Mode Lock/Prompt on Mobile */
+#landscape-prompt {
+	display: none;
+	position: fixed;
+	inset: 0;
+	z-index: 99999;
+	background: radial-gradient(circle at center, #1b1035 0%, #080912 100%);
+	color: #ffffff;
+	flex-direction: column;
+	justify-content: center;
+	align-items: center;
+	text-align: center;
+	padding: 24px;
+	box-sizing: border-box;
+	font-family: system-ui, -apple-system, sans-serif;
+}
+
+.landscape-icon {
+	font-size: 4rem;
+	margin-bottom: 16px;
+	animation: rotate-phone 2s infinite ease-in-out;
+}
+
+.landscape-title {
+	font-size: 1.6rem;
+	font-weight: 800;
+	color: #00d4ff;
+	text-shadow: 0 0 16px rgba(0, 212, 255, 0.6);
+	margin-bottom: 8px;
+}
+
+.landscape-subtitle {
+	font-size: 1rem;
+	color: #a0a5c0;
+	max-width: 320px;
+	line-height: 1.4;
+}
+
+@keyframes rotate-phone {
+	0% { transform: rotate(0deg); }
+	35% { transform: rotate(-90deg); }
+	65% { transform: rotate(-90deg); }
+	100% { transform: rotate(0deg); }
+}
+
+@media screen and (orientation: portrait) and (max-width: 1024px) and (hover: none) {
+	#landscape-prompt {
+		display: flex !important;
+	}
+}
 		</style>
 		<link id="-gd-engine-icon" rel="icon" type="image/png" href="index.icon.png" />
 <link rel="apple-touch-icon" href="index.apple-touch-icon.png"/>
 
 	</head>
 	<body>
+		<div id="landscape-prompt">
+			<div class="landscape-icon">📱🔄</div>
+			<div class="landscape-title">Obróć telefon poziomo</div>
+			<div class="landscape-subtitle">Planeta Bzzzt! wymaga trybu poziomego (landscape), aby sterowanie i widok działały idealnie! 🚀</div>
+		</div>
+
 		<canvas id="canvas">
 			Your browser does not support the canvas tag.
 		</canvas>
@@ -114,6 +171,15 @@ body {
 const GODOT_CONFIG = {"args":[],"canvasResizePolicy":2,"emscriptenPoolSize":8,"ensureCrossOriginIsolationHeaders":true,"executable":"index","experimentalVK":false,"fileSizes":{"index.pck":11225692,"index.wasm":39513091},"focusCanvas":true,"gdextensionLibs":[],"godotPoolSize":4};
 const GODOT_THREADS_ENABLED = false;
 const engine = new Engine(GODOT_CONFIG);
+
+function tryLockLandscape() {
+	if (screen.orientation && screen.orientation.lock) {
+		screen.orientation.lock('landscape').catch(() => {});
+	}
+}
+window.addEventListener('load', tryLockLandscape);
+document.addEventListener('touchstart', tryLockLandscape, { passive: true, once: true });
+document.addEventListener('click', tryLockLandscape, { passive: true, once: true });
 
 (function () {
 	const statusOverlay = document.getElementById('status');

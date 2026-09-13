@@ -20,6 +20,7 @@ config/icon="res://icon.svg"
 window/size/mode="fullscreen"
 window/stretch/mode="canvas_items"
 window/stretch/aspect="expand"
+window/handheld/orientation="sensor_landscape"
 
 [input_devices]
 

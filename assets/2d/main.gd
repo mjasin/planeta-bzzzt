@@ -69,6 +69,12 @@ func _ready() -> void:
 	var touch_shield: Button = get_node_or_null("CanvasLayer/UI/TouchShieldButton")
 	if touch_shield and player and player.has_method("activate_shield"):
 		touch_shield.pressed.connect(player.activate_shield)
+		
+	# Na komputerze ukrywamy przyciski dotykowe
+	var has_touch: bool = DisplayServer.is_touchscreen_available() or OS.has_feature("mobile") or OS.has_feature("web_android") or OS.has_feature("web_ios")
+	if not has_touch:
+		if touch_sword: touch_sword.visible = false
+		if touch_shield: touch_shield.visible = false
 	
 	var total_ufos := get_tree().get_nodes_in_group("ufos").size()
 	print(" Planeta Bzzzt! Poziom %d | Gwiazdki: %d | Liczba UFO: %d | Mnożnik prędkości: x%.2f" % [current_level, total_stars, total_ufos, meteor_speed_multiplier])

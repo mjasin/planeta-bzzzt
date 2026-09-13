@@ -60,6 +60,12 @@ func _ready() -> void:
 	if shield_button and player:
 		shield_button.button_down.connect(func(): player.touch_shield_pressed = true)
 		shield_button.button_up.connect(func(): player.touch_shield_pressed = false)
+		
+	# Na desktopie bez dotyku ukrywamy przyciski dotykowe
+	var has_touch: bool = DisplayServer.is_touchscreen_available() or OS.has_feature("mobile") or OS.has_feature("web_android") or OS.has_feature("web_ios")
+	if not has_touch:
+		if bomb_button: bomb_button.visible = false
+		if shield_button: shield_button.visible = false
 
 
 func _process(delta: float) -> void:
