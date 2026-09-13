@@ -1,7 +1,7 @@
-class_name VirtualJoystick
+class_name BzzztVirtualJoystick
 extends Control
 
-## VirtualJoystick - Kosmiczny wirtualny joystick dotykowy (Floating & Fixed)
+## BzzztVirtualJoystick - Kosmiczny wirtualny joystick dotykowy (Floating & Fixed)
 ## Automatycznie emuluje akcje: ui_left, ui_right, ui_up, ui_down
 
 @export var max_radius: float = 70.0 ## Maksymalne wychylenie gałki w pikselach
