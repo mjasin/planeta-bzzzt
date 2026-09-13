@@ -33,7 +33,8 @@
     --transition-mid:  0.3s ease;
     --transition-slow: 0.5s ease;
 
-    --font-display: 'Orbitron', 'Courier New', monospace;
+    /* Chakra Petch & Exo 2 offer futuristic sci-fi aesthetic with full Polish character support (ę, ą, ś, ć, ż, ź, ń, ó, ł) */
+    --font-display: 'Chakra Petch', 'Orbitron', system-ui, sans-serif;
     --font-body:    'Exo 2', system-ui, -apple-system, sans-serif;
 }
 
@@ -140,6 +141,24 @@ section {
     outline: none;
 }
 
+.btn-github {
+    background: rgba(255, 255, 255, 0.04);
+    color: var(--text-primary);
+    border: 1px solid rgba(255, 255, 255, 0.15);
+}
+.btn-github:hover,
+.btn-github:focus-visible {
+    border-color: var(--neon-purple);
+    background: rgba(168, 85, 247, 0.15);
+    color: #fff;
+    transform: translateY(-2px);
+    box-shadow: 0 0 20px rgba(168, 85, 247, 0.3);
+    outline: none;
+}
+.github-icon {
+    flex-shrink: 0;
+}
+
 /* ════════════════════════════════════════════
    HERO SECTION
    ════════════════════════════════════════════ */
@@ -217,12 +236,14 @@ section {
 }
 
 .title-planet {
+    font-family: 'Orbitron', var(--font-display);
     font-size: clamp(2.8rem, 9vw, 6rem);
     color: #fff;
     text-shadow: 0 0 30px rgba(255, 255, 255, 0.2);
 }
 
 .title-bzzzt {
+    font-family: 'Orbitron', var(--font-display);
     font-size: clamp(3.2rem, 11vw, 7.5rem);
     background: linear-gradient(135deg, var(--neon-blue) 0%, var(--neon-purple) 50%, var(--neon-pink) 100%);
     -webkit-background-clip: text;
