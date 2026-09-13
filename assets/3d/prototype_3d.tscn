@@ -1,4 +1,4 @@
-[gd_scene load_steps=10 format=3]
+[gd_scene load_steps=11 format=3]
 
 [ext_resource type="Script" path="res://assets/3d/prototype_3d.gd" id="1_proto"]
 [ext_resource type="Environment" path="res://default_env.tres" id="2_env"]
@@ -9,6 +9,7 @@
 [ext_resource type="PackedScene" path="res://assets/3d/portal_3d.tscn" id="7_portal"]
 [ext_resource type="PackedScene" path="res://assets/3d/star_3d.tscn" id="8_star"]
 [ext_resource type="PackedScene" path="res://assets/3d/bomb_3d.tscn" id="9_bomb"]
+[ext_resource type="Script" path="res://assets/virtual_joystick.gd" id="10_joy"]
 
 [node name="Prototype3D" type="Node3D"]
 script = ExtResource("1_proto")
@@ -136,6 +137,36 @@ theme_override_font_sizes/font_size = 18
 text = "WASD: Ruch | PPM / SHIFT: Tarcza | SPACJA: Bomba | F11: Pełny ekran"
 horizontal_alignment = 1
 
+[node name="VirtualJoystick" type="Control" parent="CanvasLayer/UI"]
+layout_mode = 1
+anchors_preset = 2
+anchor_top = 1.0
+anchor_bottom = 1.0
+offset_left = 30.0
+offset_top = -210.0
+offset_right = 230.0
+offset_bottom = -10.0
+grow_vertical = 0
+script = ExtResource("10_joy")
+
+[node name="ShieldButton" type="Button" parent="CanvasLayer/UI"]
+layout_mode = 1
+anchors_preset = 3
+anchor_left = 1.0
+anchor_top = 1.0
+anchor_right = 1.0
+anchor_bottom = 1.0
+offset_left = -340.0
+offset_top = -75.0
+offset_right = -180.0
+offset_bottom = -15.0
+grow_horizontal = 0
+grow_vertical = 0
+focus_mode = 0
+theme_override_colors/font_color = Color(0.4, 2, 3.5, 1)
+theme_override_font_sizes/font_size = 18
+text = "Tarcza"
+
 [node name="BombButton" type="Button" parent="CanvasLayer/UI"]
 layout_mode = 1
 anchors_preset = 3
@@ -143,16 +174,16 @@ anchor_left = 1.0
 anchor_top = 1.0
 anchor_right = 1.0
 anchor_bottom = 1.0
-offset_left = -220.0
-offset_top = -58.0
-offset_right = -35.0
-offset_bottom = -18.0
+offset_left = -165.0
+offset_top = -75.0
+offset_right = -25.0
+offset_bottom = -15.0
 grow_horizontal = 0
 grow_vertical = 0
 focus_mode = 0
 theme_override_colors/font_color = Color(1, 0.85, 0.2, 1)
-theme_override_font_sizes/font_size = 16
-text = "Bomba [SPACJA]"
+theme_override_font_sizes/font_size = 18
+text = "Bomba"
 
 [node name="VictoryContainer" type="Control" parent="CanvasLayer/UI"]
 visible = false

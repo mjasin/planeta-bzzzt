@@ -20,6 +20,7 @@ const BOMB_SCENE: PackedScene = preload("res://assets/3d/bomb_3d.tscn")
 @onready var shield_mesh: MeshInstance3D = get_node_or_null("ShieldMesh")
 
 var start_position: Vector3
+var touch_shield_pressed: bool = false
 var _speed_multiplier: float = 1.0
 var _boost_timer: float = 0.0
 var _is_frozen: bool = false
@@ -46,9 +47,10 @@ func _physics_process(delta: float) -> void:
 	if _bomb_cooldown > 0.0:
 		_bomb_cooldown -= delta
 		
-	# Obsługa tarczy gracza (PPM / Prawy Klawisz Myszy / Lewy Shift / Klawisz Q)
+	# Obsługa tarczy gracza (PPM / Prawy Klawisz Myszy / Lewy Shift / Klawisz Q / Przycisk dotykowy)
 	var shield_requested: bool = (
-		Input.is_mouse_button_pressed(MOUSE_BUTTON_RIGHT)
+		touch_shield_pressed
+		or Input.is_mouse_button_pressed(MOUSE_BUTTON_RIGHT)
 		or Input.is_key_pressed(KEY_SHIFT)
 		or Input.is_physical_key_pressed(KEY_SHIFT)
 		or Input.is_key_pressed(KEY_Q)

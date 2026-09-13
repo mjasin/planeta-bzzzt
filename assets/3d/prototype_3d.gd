@@ -23,6 +23,7 @@ const MAX_LIVES: int = 3
 @onready var victory_label: Label = $CanvasLayer/UI/VictoryContainer/VictoryLabel
 @onready var restart_button: Button = $CanvasLayer/UI/VictoryContainer/RestartButton
 @onready var bomb_button: Button = get_node_or_null("CanvasLayer/UI/BombButton")
+@onready var shield_button: Button = get_node_or_null("CanvasLayer/UI/ShieldButton")
 
 var score: int = 0
 var total_stars: int = 0
@@ -56,6 +57,9 @@ func _ready() -> void:
 		fullscreen_button.pressed.connect(toggle_fullscreen)
 	if bomb_button and player:
 		bomb_button.pressed.connect(player.drop_bomb)
+	if shield_button and player:
+		shield_button.button_down.connect(func(): player.touch_shield_pressed = true)
+		shield_button.button_up.connect(func(): player.touch_shield_pressed = false)
 
 
 func _process(delta: float) -> void:

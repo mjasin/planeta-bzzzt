@@ -62,6 +62,14 @@ func _ready() -> void:
 	_update_ui()
 	_trigger_ufo_chase()
 	
+	var touch_sword: Button = get_node_or_null("CanvasLayer/UI/TouchSwordButton")
+	if touch_sword and player and player.has_method("swing_sword"):
+		touch_sword.pressed.connect(player.swing_sword)
+		
+	var touch_shield: Button = get_node_or_null("CanvasLayer/UI/TouchShieldButton")
+	if touch_shield and player and player.has_method("activate_shield"):
+		touch_shield.pressed.connect(player.activate_shield)
+	
 	var total_ufos := get_tree().get_nodes_in_group("ufos").size()
 	print(" Planeta Bzzzt! Poziom %d | Gwiazdki: %d | Liczba UFO: %d | Mnożnik prędkości: x%.2f" % [current_level, total_stars, total_ufos, meteor_speed_multiplier])
 
