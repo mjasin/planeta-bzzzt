@@ -177,15 +177,31 @@ const GODOT_CONFIG = {"args":[],"canvasResizePolicy":2,"emscriptenPoolSize":8,"e
 const GODOT_THREADS_ENABLED = false;
 const engine = new Engine(GODOT_CONFIG);
 
-// Bulletproof iOS / Android Landscape Enforcement
+// Bulletproof iOS / Android Landscape & Fullscreen Enforcement
 const promptEl = document.getElementById('landscape-prompt');
+let wasPortrait = true;
+
+function requestMobileFullscreen() {
+	const docEl = document.documentElement;
+	const requestFS = docEl.requestFullscreen || docEl.webkitRequestFullscreen || docEl.mozRequestFullScreen || docEl.msRequestFullscreen;
+	if (requestFS && !document.fullscreenElement && !document.webkitFullscreenElement) {
+		requestFS.call(docEl).catch(() => {});
+	}
+}
+
 function checkOrientation() {
 	const isTouch = (navigator.maxTouchPoints && navigator.maxTouchPoints > 0) || ('ontouchstart' in window);
 	const isPortrait = window.innerHeight > window.innerWidth;
 	if (isTouch && isPortrait && window.innerWidth <= 1024) {
 		promptEl.style.display = 'flex';
+		wasPortrait = true;
 	} else if (!isPortrait || !isTouch) {
 		promptEl.style.display = 'none';
+		// Gdy użytkownik właśnie obrócił telefon do poziomu:
+		if (isTouch && wasPortrait) {
+			wasPortrait = false;
+			requestMobileFullscreen();
+		}
 	}
 }
 
@@ -194,11 +210,23 @@ function tryLockLandscape() {
 		screen.orientation.lock('landscape').catch(() => {});
 	}
 	checkOrientation();
+	const isTouch = (navigator.maxTouchPoints && navigator.maxTouchPoints > 0) || ('ontouchstart' in window);
+	if (isTouch && window.innerWidth > window.innerHeight) {
+		requestMobileFullscreen();
+	}
 }
 
 window.addEventListener('load', tryLockLandscape);
 window.addEventListener('resize', checkOrientation);
-window.addEventListener('orientationchange', () => { setTimeout(checkOrientation, 150); });
+window.addEventListener('orientationchange', () => {
+	setTimeout(() => {
+		checkOrientation();
+		const isTouch = (navigator.maxTouchPoints && navigator.maxTouchPoints > 0) || ('ontouchstart' in window);
+		if (isTouch && window.innerWidth > window.innerHeight) {
+			requestMobileFullscreen();
+		}
+	}, 150);
+});
 document.addEventListener('touchstart', tryLockLandscape, { passive: true, once: true });
 document.addEventListener('click', tryLockLandscape, { passive: true, once: true });
 checkOrientation();
