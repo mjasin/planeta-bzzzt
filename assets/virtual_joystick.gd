@@ -23,29 +23,36 @@ var _color_glow: Color = Color(0.66, 0.33, 0.97, 0.25) # Neon purple
 var _color_knob: Color = Color(0.0, 0.83, 1.0, 0.85)
 
 func _ready() -> void:
-	# Domyślnie ZAWSZE ukryty (na komputerze PC nie pojawi się nigdy)
-	visible = false
-	set_process_input(false)
-	
 	custom_minimum_size = Vector2(200, 200)
 	_default_center = size / 2.0
 	_center_pos = _default_center
 	_current_pos = _default_center
 	
-	var is_touch_device: bool = false
-	if OS.has_feature("web"):
-		# W przeglądarce sprawdzamy czy urządzenie posiada punkty dotyku ORAZ wskaźnik coarse (brak myszy)
-		var res = JavaScriptBridge.eval("Boolean((navigator.maxTouchPoints && navigator.maxTouchPoints > 0) && window.matchMedia('(pointer: coarse)').matches)", true)
-		if res == true:
-			is_touch_device = true
-		elif OS.has_feature("web_android") or OS.has_feature("web_ios"):
-			is_touch_device = true
-	else:
-		is_touch_device = OS.has_feature("mobile") or OS.has_feature("android") or OS.has_feature("ios")
+	# Sprawdzamy czy to urządzenie mobilne lub dotykowe
+	var is_mobile_or_touch: bool = false
+	if OS.has_feature("mobile") or OS.has_feature("android") or OS.has_feature("ios") or OS.has_feature("web_android") or OS.has_feature("web_ios"):
+		is_mobile_or_touch = true
+	elif OS.has_feature("web"):
+		var js_check = JavaScriptBridge.eval("Boolean((navigator.maxTouchPoints && navigator.maxTouchPoints > 0) || ('ontouchstart' in window) || /iPhone|iPad|iPod|Android/i.test(navigator.userAgent))")
+		if js_check == true or str(js_check) == "true":
+			is_mobile_or_touch = true
+	elif DisplayServer.is_touchscreen_available():
+		is_mobile_or_touch = true
 		
-	if is_touch_device:
+	if is_mobile_or_touch:
 		visible = true
 		set_process_input(true)
+	else:
+		# Na desktopie chowamy, ale nasłuchujemy czy nie pojawi się dotyk
+		visible = false
+		set_process_input(true)
+
+
+func _input(event: InputEvent) -> void:
+	# Gdy użytkownik dotknie ekranu palcem na telefonie, natychmiast ujawniamy joystick
+	if not visible and (event is InputEventScreenTouch or event is InputEventScreenDrag):
+		visible = true
+		queue_redraw()
 
 
 func _draw() -> void:

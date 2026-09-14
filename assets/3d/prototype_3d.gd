@@ -55,32 +55,27 @@ func _ready() -> void:
 		restart_button.pressed.connect(restart_scene)
 	if fullscreen_button:
 		fullscreen_button.pressed.connect(toggle_fullscreen)
-	# Domyślnie ukryte na komputerze PC
-	if bomb_button:
-		bomb_button.visible = false
-		if player:
-			bomb_button.pressed.connect(player.drop_bomb)
+	# Domyślnie podłączamy akcje przycisków
+	if bomb_button and player:
+		bomb_button.pressed.connect(player.drop_bomb)
 			
-	if shield_button:
-		shield_button.visible = false
-		if player:
-			shield_button.button_down.connect(func(): player.touch_shield_pressed = true)
-			shield_button.button_up.connect(func(): player.touch_shield_pressed = false)
+	if shield_button and player:
+		shield_button.button_down.connect(func(): player.touch_shield_pressed = true)
+		shield_button.button_up.connect(func(): player.touch_shield_pressed = false)
 		
-	# Pokazujemy TYLKO na urządzeniach z prawdziwym ekranem dotykowym
+	# Sprawdzamy czy to urządzenie mobilne lub dotykowe
 	var is_touch_screen: bool = false
-	if OS.has_feature("web"):
-		var res = JavaScriptBridge.eval("Boolean((navigator.maxTouchPoints && navigator.maxTouchPoints > 0) && window.matchMedia('(pointer: coarse)').matches)", true)
-		if res == true:
+	if OS.has_feature("mobile") or OS.has_feature("android") or OS.has_feature("ios") or OS.has_feature("web_android") or OS.has_feature("web_ios"):
+		is_touch_screen = true
+	elif OS.has_feature("web"):
+		var js_check = JavaScriptBridge.eval("Boolean((navigator.maxTouchPoints && navigator.maxTouchPoints > 0) || ('ontouchstart' in window) || /iPhone|iPad|iPod|Android/i.test(navigator.userAgent))")
+		if js_check == true or str(js_check) == "true":
 			is_touch_screen = true
-		elif OS.has_feature("web_android") or OS.has_feature("web_ios"):
-			is_touch_screen = true
-	else:
-		is_touch_screen = OS.has_feature("mobile") or OS.has_feature("android") or OS.has_feature("ios")
+	elif DisplayServer.is_touchscreen_available():
+		is_touch_screen = true
 
-	if is_touch_screen:
-		if bomb_button: bomb_button.visible = true
-		if shield_button: shield_button.visible = true
+	if bomb_button: bomb_button.visible = is_touch_screen
+	if shield_button: shield_button.visible = is_touch_screen
 
 
 func _process(delta: float) -> void:
@@ -301,6 +296,9 @@ func _unhandled_input(event: InputEvent) -> void:
 			if event.keycode == KEY_SPACE or event.keycode == KEY_ENTER:
 				restart_scene()
 				return
+	elif event is InputEventScreenTouch or event is InputEventScreenDrag:
+		if bomb_button and not bomb_button.visible: bomb_button.visible = true
+		if shield_button and not shield_button.visible: shield_button.visible = true
 	elif event is InputEventKey and event.pressed and not event.echo and event.keycode == KEY_R:
 		restart_scene()
 

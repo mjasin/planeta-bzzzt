@@ -65,31 +65,26 @@ func _ready() -> void:
 	var touch_sword: Button = get_node_or_null("CanvasLayer/UI/TouchSwordButton")
 	var touch_shield: Button = get_node_or_null("CanvasLayer/UI/TouchShieldButton")
 	
-	# Domyślnie ukryte na komputerze PC
-	if touch_sword:
-		touch_sword.visible = false
-		if player and player.has_method("swing_sword"):
-			touch_sword.pressed.connect(player.swing_sword)
+	# Domyślnie podłączamy akcje przycisków
+	if touch_sword and player and player.has_method("swing_sword"):
+		touch_sword.pressed.connect(player.swing_sword)
 			
-	if touch_shield:
-		touch_shield.visible = false
-		if player and player.has_method("activate_shield"):
-			touch_shield.pressed.connect(player.activate_shield)
+	if touch_shield and player and player.has_method("activate_shield"):
+		touch_shield.pressed.connect(player.activate_shield)
 		
-	# Pokazujemy TYLKO na urządzeniach z prawdziwym ekranem dotykowym
+	# Sprawdzamy czy to urządzenie mobilne lub dotykowe
 	var is_touch_screen: bool = false
-	if OS.has_feature("web"):
-		var res = JavaScriptBridge.eval("Boolean((navigator.maxTouchPoints && navigator.maxTouchPoints > 0) && window.matchMedia('(pointer: coarse)').matches)", true)
-		if res == true:
+	if OS.has_feature("mobile") or OS.has_feature("android") or OS.has_feature("ios") or OS.has_feature("web_android") or OS.has_feature("web_ios"):
+		is_touch_screen = true
+	elif OS.has_feature("web"):
+		var js_check = JavaScriptBridge.eval("Boolean((navigator.maxTouchPoints && navigator.maxTouchPoints > 0) || ('ontouchstart' in window) || /iPhone|iPad|iPod|Android/i.test(navigator.userAgent))")
+		if js_check == true or str(js_check) == "true":
 			is_touch_screen = true
-		elif OS.has_feature("web_android") or OS.has_feature("web_ios"):
-			is_touch_screen = true
-	else:
-		is_touch_screen = OS.has_feature("mobile") or OS.has_feature("android") or OS.has_feature("ios")
+	elif DisplayServer.is_touchscreen_available():
+		is_touch_screen = true
 
-	if is_touch_screen:
-		if touch_sword: touch_sword.visible = true
-		if touch_shield: touch_shield.visible = true
+	if touch_sword: touch_sword.visible = is_touch_screen
+	if touch_shield: touch_shield.visible = is_touch_screen
 	
 	var total_ufos := get_tree().get_nodes_in_group("ufos").size()
 	print(" Planeta Bzzzt! Poziom %d | Gwiazdki: %d | Liczba UFO: %d | Mnożnik prędkości: x%.2f" % [current_level, total_stars, total_ufos, meteor_speed_multiplier])
@@ -740,8 +735,13 @@ func _unhandled_input(event: InputEvent) -> void:
 				restart_game()
 				return
 	else:
+		if event is InputEventScreenTouch or event is InputEventScreenDrag:
+			var touch_sword: Button = get_node_or_null("CanvasLayer/UI/TouchSwordButton")
+			var touch_shield: Button = get_node_or_null("CanvasLayer/UI/TouchShieldButton")
+			if touch_sword and not touch_sword.visible: touch_sword.visible = true
+			if touch_shield and not touch_shield.visible: touch_shield.visible = true
 		# Klawisz R pozwala zresetować grę do poziomu 1 w dowolnym momencie
-		if event is InputEventKey and event.pressed and not event.echo and event.keycode == KEY_R:
+		elif event is InputEventKey and event.pressed and not event.echo and event.keycode == KEY_R:
 			reset_progression()
 			get_tree().reload_current_scene()
 
