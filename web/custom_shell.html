@@ -138,8 +138,8 @@ body {
 	100% { transform: rotate(0deg); }
 }
 
-/* Show prompt ONLY on mobile/touch screens in portrait */
-@media screen and (orientation: portrait) and (max-width: 1024px) and (hover: none) {
+/* Show prompt on any touch device in portrait orientation */
+@media screen and (orientation: portrait) and (max-width: 1024px) {
 	#landscape-prompt {
 		display: flex !important;
 	}
@@ -175,16 +175,31 @@ const GODOT_CONFIG = $GODOT_CONFIG;
 const GODOT_THREADS_ENABLED = $GODOT_THREADS_ENABLED;
 const engine = new Engine(GODOT_CONFIG);
 
-// Screen Orientation API attempt
+// Bulletproof iOS / Android Landscape Enforcement
+const promptEl = document.getElementById('landscape-prompt');
+function checkOrientation() {
+	const isTouch = (navigator.maxTouchPoints && navigator.maxTouchPoints > 0) || ('ontouchstart' in window);
+	const isPortrait = window.innerHeight > window.innerWidth;
+	if (isTouch && isPortrait && window.innerWidth <= 1024) {
+		promptEl.style.display = 'flex';
+	} else if (!isPortrait || !isTouch) {
+		promptEl.style.display = 'none';
+	}
+}
+
 function tryLockLandscape() {
 	if (screen.orientation && screen.orientation.lock) {
 		screen.orientation.lock('landscape').catch(() => {});
 	}
+	checkOrientation();
 }
 
 window.addEventListener('load', tryLockLandscape);
+window.addEventListener('resize', checkOrientation);
+window.addEventListener('orientationchange', () => { setTimeout(checkOrientation, 150); });
 document.addEventListener('touchstart', tryLockLandscape, { passive: true, once: true });
 document.addEventListener('click', tryLockLandscape, { passive: true, once: true });
+checkOrientation();
 
 (function () {
 	const statusOverlay = document.getElementById('status');

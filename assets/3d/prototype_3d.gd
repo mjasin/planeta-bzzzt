@@ -288,11 +288,19 @@ func _unhandled_input(event: InputEvent) -> void:
 			return
 
 	if is_game_won or current_lives <= 0:
-		if event.is_action_pressed("ui_accept"):
+		if event is InputEventScreenTouch and event.pressed:
 			restart_scene()
+			return
+		elif event is InputEventMouseButton and event.pressed and event.button_index == MOUSE_BUTTON_LEFT:
+			restart_scene()
+			return
+		elif event.is_action_pressed("ui_accept"):
+			restart_scene()
+			return
 		elif event is InputEventKey and event.pressed and not event.echo:
 			if event.keycode == KEY_SPACE or event.keycode == KEY_ENTER:
 				restart_scene()
+				return
 	elif event is InputEventKey and event.pressed and not event.echo and event.keycode == KEY_R:
 		restart_scene()
 

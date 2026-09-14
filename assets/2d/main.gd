@@ -591,18 +591,20 @@ func _setup_victory_ui() -> void:
 
 	# Stylizacja i podłączenie przycisku restartu
 	if restart_button:
-		restart_button.add_theme_font_size_override("font_size", 26)
+		restart_button.add_theme_font_size_override("font_size", 28)
 		restart_button.focus_mode = Control.FOCUS_NONE
+		restart_button.mouse_filter = Control.MOUSE_FILTER_STOP
 		if not restart_button.pressed.is_connected(restart_game):
 			restart_button.pressed.connect(restart_game)
 
-	# Stylizacja podpowiedzi klawiszowej
+	# Stylizacja podpowiedzi klawiszowej / dotykowej
 	if restart_hint_label:
-		restart_hint_label.add_theme_font_size_override("font_size", 18)
+		restart_hint_label.add_theme_font_size_override("font_size", 20)
 		restart_hint_label.add_theme_color_override("font_color", Color(0.6, 1.2, 2.0, 0.9))
 
 	if victory_container:
 		victory_container.visible = false
+		victory_container.mouse_filter = Control.MOUSE_FILTER_IGNORE
 
 
 ## Efekt wyświetlenia ekranu zwycięstwa z animacją Tween (juice)
@@ -632,17 +634,29 @@ func _show_victory_screen() -> void:
 		wobble_tween.tween_property(victory_label, "rotation", deg_to_rad(-3.0), 0.5).set_trans(Tween.TRANS_SINE)
 		
 	if restart_button:
-		var next_ufo_count: int = current_level + 1
-		restart_button.text = " Poziom %d (+1 UFO , +%d ) " % [current_level + 1, stars_increase_per_level]
+		restart_button.text = " 🚀 Poziom %d (+1 UFO 🛸, +%d ⭐) ➔ " % [current_level + 1, stars_increase_per_level]
 		restart_button.visible = true
 		restart_button.scale = Vector2.ZERO
+		restart_button.reset_size()
 		restart_button.pivot_offset = restart_button.size / 2.0
 		var btn_tween := create_tween().set_trans(Tween.TRANS_BACK).set_ease(Tween.EASE_OUT)
 		btn_tween.tween_interval(0.35)
 		btn_tween.tween_property(restart_button, "scale", Vector2.ONE, 0.35)
 		
 	if restart_hint_label:
-		restart_hint_label.text = "(Naciśnij SPACJĘ lub ENTER aby rozpocząć Poziom %d)" % (current_level + 1)
+		# Dostosowanie komunikatu w zależności od urządzenia (PC vs Dotyk)
+		var is_touch_dev: bool = false
+		if OS.has_feature("web"):
+			var res = JavaScriptBridge.eval("Boolean((navigator.maxTouchPoints && navigator.maxTouchPoints > 0) || window.matchMedia('(pointer: coarse)').matches)", true)
+			is_touch_dev = (res == true) or OS.has_feature("web_android") or OS.has_feature("web_ios")
+		else:
+			is_touch_dev = OS.has_feature("mobile") or DisplayServer.is_touchscreen_available()
+			
+		if is_touch_dev:
+			restart_hint_label.text = "👉 Dotknij ekranu w dowolnym miejscu, aby kontynuować!"
+		else:
+			restart_hint_label.text = "(Naciśnij SPACJĘ lub kliknij przycisk, aby rozpocząć Poziom %d)" % (current_level + 1)
+			
 		restart_hint_label.visible = true
 		restart_hint_label.modulate.a = 0.0
 		var hint_tween := create_tween()
@@ -711,11 +725,20 @@ func _unhandled_input(event: InputEvent) -> void:
 			return
 			
 	if is_game_won or current_lives <= 0:
-		if event.is_action_pressed("ui_accept"):
+		# Na ekranie zwycięstwa lub Game Over dowolny dotyk ekranu, kliknięcie lub Spacja/Enter przechodzi dalej
+		if event is InputEventScreenTouch and event.pressed:
 			restart_game()
+			return
+		elif event is InputEventMouseButton and event.pressed and event.button_index == MOUSE_BUTTON_LEFT:
+			restart_game()
+			return
+		elif event.is_action_pressed("ui_accept"):
+			restart_game()
+			return
 		elif event is InputEventKey and event.pressed and not event.echo:
 			if event.keycode == KEY_SPACE or event.keycode == KEY_ENTER or event.keycode == KEY_KP_ENTER:
 				restart_game()
+				return
 	else:
 		# Klawisz R pozwala zresetować grę do poziomu 1 w dowolnym momencie
 		if event is InputEventKey and event.pressed and not event.echo and event.keycode == KEY_R:

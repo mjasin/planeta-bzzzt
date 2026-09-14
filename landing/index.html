@@ -334,9 +334,14 @@
     const modal  = document.getElementById('game-modal');
     const loader = document.getElementById('game-loader');
 
-    // Detect touch/mobile: coarse pointer = no precise mouse
+    // Detect touch/mobile: coarse pointer, touch points, or mobile user agent
     function isTouchDevice() {
-        return window.matchMedia('(hover: none) and (pointer: coarse)').matches;
+        return (
+            (window.matchMedia && window.matchMedia('(hover: none) and (pointer: coarse)').matches) ||
+            (navigator.maxTouchPoints && navigator.maxTouchPoints > 0) ||
+            ('ontouchstart' in window) ||
+            /iPhone|iPad|iPod|Android/i.test(navigator.userAgent)
+        );
     }
 
     // Wire up load event — not inline, so function is always defined first
