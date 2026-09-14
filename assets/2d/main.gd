@@ -600,6 +600,18 @@ func _setup_victory_ui() -> void:
 	if victory_container:
 		victory_container.visible = false
 		victory_container.mouse_filter = Control.MOUSE_FILTER_IGNORE
+		
+		# Dodajemy pełnoekranowy, przezroczysty przycisk dotykowy na całym ekranie
+		var tap_area := Button.new()
+		tap_area.name = "VictoryTapArea"
+		tap_area.set_anchors_preset(Control.PRESET_FULL_RECT)
+		tap_area.flat = true
+		tap_area.focus_mode = Control.FOCUS_NONE
+		tap_area.mouse_filter = Control.MOUSE_FILTER_STOP
+		tap_area.pressed.connect(restart_game)
+		# Wstawiamy go jako pierwsze dziecko, aby napisy i przyciski były na wierzchu
+		victory_container.add_child(tap_area)
+		victory_container.move_child(tap_area, 0)
 
 
 ## Efekt wyświetlenia ekranu zwycięstwa z animacją Tween (juice)
@@ -709,6 +721,16 @@ func _spawn_victory_confetti() -> void:
 	star_rain.color = Color(3.5, 3.2, 0.3, 0.9) # Golden Star Glow
 	add_child(star_rain)
 	star_rain.emitting = true
+
+
+func _input(event: InputEvent) -> void:
+	if is_game_won or current_lives <= 0:
+		if event is InputEventScreenTouch and event.pressed:
+			restart_game()
+			get_viewport().set_input_as_handled()
+		elif event is InputEventMouseButton and event.pressed and event.button_index == MOUSE_BUTTON_LEFT:
+			restart_game()
+			get_viewport().set_input_as_handled()
 
 
 ## Obsługa klawiatury - Space/Enter przechodzi do kolejnego poziomu (lub restartuje po Game Over), 'R' resetuje do poziomu 1, F11 przełącza pełny ekran

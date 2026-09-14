@@ -138,10 +138,41 @@ body {
 	100% { transform: rotate(0deg); }
 }
 
+/* Pływający przycisk pełnego ekranu dla urządzeń mobilnych */
+#fs-toggle-btn {
+	position: fixed;
+	top: 14px;
+	right: 14px;
+	z-index: 9999;
+	background: rgba(15, 23, 42, 0.75);
+	border: 2px solid rgba(0, 212, 255, 0.7);
+	border-radius: 50%;
+	width: 46px;
+	height: 46px;
+	color: #00d4ff;
+	font-size: 1.4rem;
+	display: flex;
+	justify-content: center;
+	align-items: center;
+	cursor: pointer;
+	backdrop-filter: blur(4px);
+	-webkit-backdrop-filter: blur(4px);
+	box-shadow: 0 0 12px rgba(0, 212, 255, 0.4);
+	user-select: none;
+	-webkit-user-select: none;
+}
+#fs-toggle-btn:active {
+	transform: scale(0.92);
+	background: rgba(0, 212, 255, 0.3);
+}
+
 /* Show prompt on any touch device in portrait orientation */
 @media screen and (orientation: portrait) and (max-width: 1024px) {
 	#landscape-prompt {
 		display: flex !important;
+	}
+	#fs-toggle-btn {
+		display: none !important;
 	}
 }
 		</style>
@@ -154,6 +185,9 @@ body {
 			<div class="landscape-title">Obróć telefon poziomo</div>
 			<div class="landscape-subtitle">Planeta Bzzzt! wymaga trybu poziomego (landscape), aby sterowanie i widok działały idealnie! 🚀</div>
 		</div>
+
+		<!-- Przycisk pełnego ekranu -->
+		<div id="fs-toggle-btn" title="Pełny ekran (Fullscreen)">⛶</div>
 
 		<canvas id="canvas">
 			Twoja przeglądarka nie obsługuje elementu Canvas.
@@ -177,6 +211,7 @@ const engine = new Engine(GODOT_CONFIG);
 
 // Bulletproof iOS / Android Landscape & Fullscreen Enforcement
 const promptEl = document.getElementById('landscape-prompt');
+const fsBtn = document.getElementById('fs-toggle-btn');
 let wasPortrait = true;
 
 function requestMobileFullscreen() {
@@ -187,6 +222,26 @@ function requestMobileFullscreen() {
 	}
 }
 
+function toggleMobileFullscreen() {
+	if (document.fullscreenElement || document.webkitFullscreenElement) {
+		const exitFS = document.exitFullscreen || document.webkitExitFullscreen || document.mozCancelFullScreen || document.msExitFullscreen;
+		if (exitFS) exitFS.call(document).catch(() => {});
+	} else {
+		requestMobileFullscreen();
+	}
+}
+
+if (fsBtn) {
+	fsBtn.addEventListener('click', (e) => {
+		e.stopPropagation();
+		toggleMobileFullscreen();
+	});
+	fsBtn.addEventListener('touchstart', (e) => {
+		e.stopPropagation();
+		toggleMobileFullscreen();
+	}, { passive: false });
+}
+
 function checkOrientation() {
 	const isTouch = (navigator.maxTouchPoints && navigator.maxTouchPoints > 0) || ('ontouchstart' in window);
 	const isPortrait = window.innerHeight > window.innerWidth;
@@ -195,7 +250,6 @@ function checkOrientation() {
 		wasPortrait = true;
 	} else if (!isPortrait || !isTouch) {
 		promptEl.style.display = 'none';
-		// Gdy użytkownik właśnie obrócił telefon do poziomu:
 		if (isTouch && wasPortrait) {
 			wasPortrait = false;
 			requestMobileFullscreen();
@@ -225,8 +279,20 @@ window.addEventListener('orientationchange', () => {
 		}
 	}, 150);
 });
-document.addEventListener('touchstart', tryLockLandscape, { passive: true, once: true });
-document.addEventListener('click', tryLockLandscape, { passive: true, once: true });
+
+// Każdy dotyk w orientacji poziomej upewnia się, że gra jest na pełnym ekranie
+document.addEventListener('touchstart', () => {
+	if (window.innerWidth > window.innerHeight && !document.fullscreenElement && !document.webkitFullscreenElement) {
+		requestMobileFullscreen();
+	}
+}, { passive: true });
+
+document.addEventListener('click', () => {
+	if (window.innerWidth > window.innerHeight && !document.fullscreenElement && !document.webkitFullscreenElement) {
+		requestMobileFullscreen();
+	}
+}, { passive: true });
+
 checkOrientation();
 
 (function () {
